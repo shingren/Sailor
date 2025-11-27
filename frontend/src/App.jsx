@@ -1,28 +1,36 @@
-import { useState, useEffect } from 'react'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthContext'
+import HomePage from './HomePage'
+import MesasPage from './MesasPage'
+import ProductosPage from './ProductosPage'
+import LoginPage from './LoginPage'
 
 function App() {
-  const [healthStatus, setHealthStatus] = useState(null)
-  const [error, setError] = useState(null)
+  const { isAuthenticated, email, logout } = useAuth()
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    fetch('http://localhost:8080/health')
-      .then(response => response.json())
-      .then(data => setHealthStatus(data.status))
-      .catch(err => setError(err.message))
-  }, [])
-
-  if (error) {
-    return <div>Error: {error}</div>
-  }
-
-  if (!healthStatus) {
-    return <div>Loading...</div>
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
   }
 
   return (
     <div>
-      <h1>Sailor is running</h1>
-      <p>Health status: {healthStatus}</p>
+      <nav>
+        <Link to="/">Home</Link> | <Link to="/mesas">Mesas</Link> | <Link to="/productos">Productos</Link> | <Link to="/login">Login</Link>
+        {isAuthenticated && (
+          <span>
+            {' '}| Logged in as {email} | <button onClick={handleLogout}>Logout</button>
+          </span>
+        )}
+      </nav>
+      <hr />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/mesas" element={<MesasPage />} />
+        <Route path="/productos" element={<ProductosPage />} />
+      </Routes>
     </div>
   )
 }
