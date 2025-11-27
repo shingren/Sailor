@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/mesas/**").authenticated()
                 .requestMatchers("/productos/**").authenticated()
+                .requestMatchers("/pedidos/**").authenticated()
                 .anyRequest().authenticated()
             )
             .httpBasic(basic -> {});
