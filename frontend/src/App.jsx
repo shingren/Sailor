@@ -7,6 +7,7 @@ import PedidosPage from './PedidosPage'
 import CocinaPage from './CocinaPage'
 import FacturasPage from './FacturasPage'
 import InventarioPage from './InventarioPage'
+import ReservasPage from './ReservasPage'
 import LoginPage from './LoginPage'
 
 function App() {
@@ -21,7 +22,7 @@ function App() {
   return (
     <div>
       <nav>
-        <Link to="/">Home</Link> | <Link to="/mesas">Mesas</Link> | <Link to="/productos">Productos</Link> | <Link to="/pedidos">Pedidos</Link> | <Link to="/cocina">Cocina</Link> | <Link to="/facturas">Facturas</Link> | <Link to="/inventario">Inventario</Link> | <Link to="/login">Login</Link>
+        <Link to="/">Home</Link> | <Link to="/mesas">Mesas</Link> | <Link to="/productos">Productos</Link> | <Link to="/pedidos">Pedidos</Link> | <Link to="/cocina">Cocina</Link> | <Link to="/facturas">Facturas</Link> | <Link to="/inventario">Inventario</Link> | <Link to="/reservas">Reservas</Link> | <Link to="/login">Login</Link>
         {isAuthenticated && (
           <span>
             {' '}| Logged in as {email} | <button onClick={handleLogout}>Logout</button>
@@ -38,6 +39,7 @@ function App() {
         <Route path="/cocina" element={<CocinaPage />} />
         <Route path="/facturas" element={<FacturasPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
+        <Route path="/reservas" element={<ReservasPage />} />
       </Routes>
     </div>
   )
