@@ -31,8 +31,8 @@ function ReservasPage() {
     setError('')
     try {
       const [reservasRes, mesasRes] = await Promise.all([
-        fetch('http://localhost:8080/reservas', { headers: { 'Authorization': getAuthHeader() } }),
-        fetch('http://localhost:8080/mesas', { headers: { 'Authorization': getAuthHeader() } })
+        fetch('/api/reservas', { headers: { 'Authorization': getAuthHeader() } }),
+        fetch('/api/mesas', { headers: { 'Authorization': getAuthHeader() } })
       ])
 
       if (!reservasRes.ok || !mesasRes.ok) {
@@ -65,7 +65,7 @@ function ReservasPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/reservas', {
+      const response = await fetch('/api/reservas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ function ReservasPage() {
   const handleCancelar = async (id) => {
     setError('')
     try {
-      const response = await fetch(`http://localhost:8080/reservas/${id}/cancelar`, {
+      const response = await fetch(`/api/reservas/${id}/cancelar`, {
         method: 'POST',
         headers: {
           'Authorization': getAuthHeader()

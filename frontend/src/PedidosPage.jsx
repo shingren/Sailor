@@ -32,7 +32,7 @@ function PedidosPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('http://localhost:8080/pedidos', {
+      const response = await fetch('/api/pedidos', {
         headers: { 'Authorization': getAuthHeader() }
       })
 
@@ -60,7 +60,7 @@ function PedidosPage() {
   const fetchMesas = async () => {
     setLoadingMesas(true)
     try {
-      const response = await fetch('http://localhost:8080/mesas', {
+      const response = await fetch('/api/mesas', {
         headers: { 'Authorization': getAuthHeader() }
       })
 
@@ -78,7 +78,7 @@ function PedidosPage() {
   const fetchProductos = async () => {
     setLoadingProductos(true)
     try {
-      const response = await fetch('http://localhost:8080/productos', {
+      const response = await fetch('/api/productos', {
         headers: { 'Authorization': getAuthHeader() }
       })
 
@@ -143,7 +143,7 @@ function PedidosPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/pedidos', {
+      const response = await fetch('/api/pedidos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

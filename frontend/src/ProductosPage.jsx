@@ -26,7 +26,7 @@ function ProductosPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('http://localhost:8080/productos', {
+      const response = await fetch('/api/productos', {
         headers: {
           'Authorization': getAuthHeader()
         }
@@ -50,7 +50,7 @@ function ProductosPage() {
     setCreateError(null)
 
     try {
-      const response = await fetch('http://localhost:8080/productos', {
+      const response = await fetch('/api/productos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

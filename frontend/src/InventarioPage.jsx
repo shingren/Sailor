@@ -42,10 +42,10 @@ function InventarioPage() {
     setError('')
     try {
       const [insumosRes, movimientosRes, recetasRes, productosRes] = await Promise.all([
-        fetch('http://localhost:8080/insumos', { headers: { 'Authorization': getAuthHeader() } }),
-        fetch('http://localhost:8080/insumos/movimientos', { headers: { 'Authorization': getAuthHeader() } }),
-        fetch('http://localhost:8080/recetas', { headers: { 'Authorization': getAuthHeader() } }),
-        fetch('http://localhost:8080/productos', { headers: { 'Authorization': getAuthHeader() } })
+        fetch('/api/insumos', { headers: { 'Authorization': getAuthHeader() } }),
+        fetch('/api/insumos/movimientos', { headers: { 'Authorization': getAuthHeader() } }),
+        fetch('/api/recetas', { headers: { 'Authorization': getAuthHeader() } }),
+        fetch('/api/productos', { headers: { 'Authorization': getAuthHeader() } })
       ])
 
       if (!insumosRes.ok || !movimientosRes.ok || !recetasRes.ok || !productosRes.ok) {
@@ -77,7 +77,7 @@ function InventarioPage() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:8080/insumos', {
+      const response = await fetch('/api/insumos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ function InventarioPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/insumos/movimientos', {
+      const response = await fetch('/api/insumos/movimientos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ function InventarioPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/recetas', {
+      const response = await fetch('/api/recetas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

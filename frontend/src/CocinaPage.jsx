@@ -25,7 +25,7 @@ function CocinaPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('http://localhost:8080/pedidos/activos', {
+      const response = await fetch('/api/pedidos/activos', {
         headers: { 'Authorization': getAuthHeader() }
       })
 
@@ -53,7 +53,7 @@ function CocinaPage() {
   const cambiarEstado = async (pedidoId, nuevoEstado) => {
     setError('')
     try {
-      const response = await fetch(`http://localhost:8080/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`/api/pedidos/${pedidoId}/estado`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

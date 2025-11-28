@@ -22,7 +22,7 @@ function FacturasPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('http://localhost:8080/facturas', {
+      const response = await fetch('/api/facturas', {
         headers: { 'Authorization': getAuthHeader() }
       })
 
@@ -57,7 +57,7 @@ function FacturasPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/facturas', {
+      const response = await fetch('/api/facturas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ function FacturasPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/pagos', {
+      const response = await fetch('/api/pagos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

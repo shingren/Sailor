@@ -26,7 +26,7 @@ function MesasPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('http://localhost:8080/mesas', {
+      const response = await fetch('/api/mesas', {
         headers: {
           'Authorization': getAuthHeader()
         }
@@ -50,7 +50,7 @@ function MesasPage() {
     setCreateError(null)
 
     try {
-      const response = await fetch('http://localhost:8080/mesas', {
+      const response = await fetch('/api/mesas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

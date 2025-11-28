@@ -6,7 +6,7 @@ function HomePage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8080/health')
+    fetch('/api/health')
       .then(response => response.json())
       .then(data => setHealthStatus(data.status))
       .catch(err => setError(err.message))

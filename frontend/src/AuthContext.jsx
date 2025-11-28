@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
   const isAuthenticated = accessToken !== ''
 
   const login = async (userEmail, userPassword) => {
-    const response = await fetch('http://localhost:8080/auth/login', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: userEmail, password: userPassword })

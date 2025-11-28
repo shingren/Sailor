@@ -27,11 +27,11 @@ function ReportesPage() {
       }
 
       const [ventasDiaRes, ventasProductoRes, pedidosEstadoRes, consumoInsumosRes, reservasDiaRes] = await Promise.all([
-        fetch('http://localhost:8080/reportes/ventas-dia', { headers }),
-        fetch('http://localhost:8080/reportes/ventas-producto', { headers }),
-        fetch('http://localhost:8080/reportes/pedidos-estado', { headers }),
-        fetch('http://localhost:8080/reportes/consumo-insumos-dia', { headers }),
-        fetch('http://localhost:8080/reportes/reservas-dia', { headers })
+        fetch('/api/reportes/ventas-dia', { headers }),
+        fetch('/api/reportes/ventas-producto', { headers }),
+        fetch('/api/reportes/pedidos-estado', { headers }),
+        fetch('/api/reportes/consumo-insumos-dia', { headers }),
+        fetch('/api/reportes/reservas-dia', { headers })
       ])
 
       if (!ventasDiaRes.ok || !ventasProductoRes.ok || !pedidosEstadoRes.ok || !consumoInsumosRes.ok || !reservasDiaRes.ok) {
