@@ -20,12 +20,18 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (usuarioRepository.count() == 0) {
             Usuario admin = new Usuario();
-            admin.setEmail("admin@sailor.local");
-            admin.setPasswordHash(passwordEncoder.encode("Admin#123"));
+            admin.setEmail("admin@sailor.com");
+            admin.setPasswordHash(passwordEncoder.encode("admin123"));
             admin.setRol("ADMIN");
 
+            Usuario user = new Usuario();
+            user.setEmail("user@sailor.com");
+            user.setPasswordHash(passwordEncoder.encode("user123"));
+            user.setRol("USER");
+
             usuarioRepository.save(admin);
-            System.out.println("Default admin user created: admin@sailor.local");
+            usuarioRepository.save(user);
+            System.out.println("Default users created: admin@sailor.com, user@sailor.com");
         }
     }
 }

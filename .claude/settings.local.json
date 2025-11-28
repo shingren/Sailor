@@ -5,7 +5,8 @@
       "Bash(docker compose:*)",
       "Bash(curl:*)",
       "Bash(docker logs:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(docker wait:*)"
     ],
     "deny": [],
     "ask": []

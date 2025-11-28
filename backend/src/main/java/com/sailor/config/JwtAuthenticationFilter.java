@@ -29,6 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Skip public endpoints - do not process JWT for /auth/** or /health
+        String path = request.getServletPath();
+        if (path.startsWith("/auth") || path.equals("/health")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username = null;
