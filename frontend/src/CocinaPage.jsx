@@ -68,8 +68,13 @@ function CocinaPage() {
       }
 
       if (!response.ok) {
-        const errorText = await response.text()
-        setError(`Failed to change estado: ${errorText}`)
+        try {
+          const errorData = await response.json()
+          setError(`Failed to change estado: ${errorData.error || 'Unknown error'}`)
+        } catch {
+          const errorText = await response.text()
+          setError(`Failed to change estado: ${errorText}`)
+        }
         return
       }
 

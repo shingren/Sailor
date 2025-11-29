@@ -6,7 +6,8 @@
       "Bash(curl:*)",
       "Bash(docker logs:*)",
       "Bash(docker exec:*)",
-      "Bash(docker wait:*)"
+      "Bash(docker wait:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []
