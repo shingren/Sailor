@@ -19,43 +19,58 @@ function LoginPage() {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      setError('Invalid credentials')
+      setError('Invalid credentials. Please check your email and password.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Email:
+    <div className="login-container">
+      <div className="login-card">
+        <h1 className="login-title">Sign in to Sailor</h1>
+
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email">Email Address</label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@sailor.com"
               required
+              autoFocus
             />
-          </label>
-        </div>
-        <div>
-          <label>
-            Password:
+          </div>
+
+          <div>
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               required
             />
-          </label>
-        </div>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      {error && <div style={{ color: 'red' }}>Error: {error}</div>}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary btn-full-width"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
