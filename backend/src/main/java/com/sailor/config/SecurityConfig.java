@@ -108,6 +108,9 @@ public class SecurityConfig {
                 // CIERRE CAJA - ADMIN, CAJA
                 .requestMatchers("/cierre-caja/**").hasAnyRole("ADMIN", "CAJA")
 
+                // DASHBOARD - All authenticated users
+                .requestMatchers("/dashboard/**").authenticated()
+
                 // All other endpoints require ADMIN
                 .anyRequest().hasRole("ADMIN")
             )

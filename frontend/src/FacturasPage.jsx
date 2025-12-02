@@ -152,15 +152,50 @@ function FacturasPage() {
     )
   }
 
+  // Calculate summary statistics
+  const totalFacturas = facturas.length
+  const facturasPendientes = facturas.filter(f => f.estado === 'PENDIENTE').length
+  const facturasPagadas = facturas.filter(f => f.estado === 'PAGADO' || f.estado === 'PAGADA').length
+  const montoTotalCobrado = facturas
+    .filter(f => f.estado === 'PAGADO' || f.estado === 'PAGADA')
+    .reduce((sum, f) => sum + f.total, 0)
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount || 0)
+  }
+
   return (
     <div>
-      <h1>Facturas - Billing & Payments</h1>
+      <h1>Facturas</h1>
+
+      {/* Summary Stats Section */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Facturas</div>
+          <div className="stat-value stat-value-primary">{totalFacturas}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Pendientes</div>
+          <div className="stat-value stat-value-warning">{facturasPendientes}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Pagadas</div>
+          <div className="stat-value stat-value-success">{facturasPagadas}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total Cobrado</div>
+          <div className="stat-value stat-value-success">{formatCurrency(montoTotalCobrado)}</div>
+        </div>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="card">
         <div className="card-header">
-          <h2>Generar Factura</h2>
+          <h2 className="card-title">Generar Factura</h2>
         </div>
         <form onSubmit={generarFactura}>
           <label htmlFor="pedidoId">
@@ -179,7 +214,7 @@ function FacturasPage() {
 
       <div className="card">
         <div className="card-header">
-          <h2>Facturas Existentes</h2>
+          <h2 className="card-title">Facturas Recientes</h2>
         </div>
         {loading ? (
           <div className="loading">Loading</div>

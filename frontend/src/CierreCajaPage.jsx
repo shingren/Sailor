@@ -158,7 +158,7 @@ function CierreCajaPage() {
       {/* Section A: Resumen del día */}
       <div className="card">
         <div className="card-header">
-          <h2>Resumen del Día</h2>
+          <h2 className="card-title">Resumen del Día</h2>
         </div>
 
         {resumenDia && (
@@ -203,7 +203,7 @@ function CierreCajaPage() {
       {resumenDia && !resumenDia.cierreExiste && (
         <div className="card">
           <div className="card-header">
-            <h2>Registrar Cierre del Día</h2>
+            <h2 className="card-title">Registrar Cierre del Día</h2>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -252,7 +252,7 @@ function CierreCajaPage() {
       {/* Section C: Historial de cierres */}
       <div className="card">
         <div className="card-header">
-          <h2>Historial de Cierres</h2>
+          <h2 className="card-title">Historial de Cierres</h2>
         </div>
 
         {historial.length === 0 ? (

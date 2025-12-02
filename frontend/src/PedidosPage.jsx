@@ -193,15 +193,41 @@ function PedidosPage() {
     )
   }
 
+  // Calculate summary statistics
+  const totalPedidos = pedidos.length
+  const pedidosPendientes = pedidos.filter(p => p.estado === 'PENDIENTE').length
+  const pedidosEnPreparacion = pedidos.filter(p => p.estado === 'EN_PREPARACION' || p.estado === 'PREPARACION').length
+  const pedidosListos = pedidos.filter(p => p.estado === 'LISTO').length
+
   return (
     <div>
       <h1>Pedidos</h1>
+
+      {/* Summary Stats Section */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Pedidos</div>
+          <div className="stat-value stat-value-primary">{totalPedidos}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Pendientes</div>
+          <div className="stat-value stat-value-warning">{pedidosPendientes}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">En Preparación</div>
+          <div className="stat-value stat-value-primary">{pedidosEnPreparacion}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Listos</div>
+          <div className="stat-value stat-value-success">{pedidosListos}</div>
+        </div>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="card">
         <div className="card-header">
-          <h2>Existing Pedidos</h2>
+          <h2 className="card-title">Pedidos Activos</h2>
         </div>
         {loading ? (
           <div className="loading">Loading</div>
@@ -248,7 +274,7 @@ function PedidosPage() {
 
       <div className="card">
         <div className="card-header">
-          <h2>Create New Pedido</h2>
+          <h2 className="card-title">Crear Nuevo Pedido</h2>
         </div>
         {loadingMesas || loadingProductos ? (
           <div className="loading">Loading</div>

@@ -101,13 +101,39 @@ function MesasPage() {
   if (loading) return <div className="loading">Loading mesas</div>
   if (error) return <div className="alert alert-error">Error: {error}</div>
 
+  // Calculate summary statistics
+  const totalMesas = mesas.length
+  const mesasDisponibles = mesas.filter(m => m.estado === 'disponible').length
+  const mesasOcupadas = mesas.filter(m => m.estado === 'ocupada' || m.estado === 'OCUPADA').length
+  const mesasReservadas = mesas.filter(m => m.estado === 'reservada').length
+
   return (
     <div>
       <h1>Mesas</h1>
 
+      {/* Summary Stats Section */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Mesas</div>
+          <div className="stat-value stat-value-primary">{totalMesas}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Disponibles</div>
+          <div className="stat-value stat-value-success">{mesasDisponibles}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Ocupadas</div>
+          <div className="stat-value stat-value-danger">{mesasOcupadas}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Reservadas</div>
+          <div className="stat-value stat-value-warning">{mesasReservadas}</div>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-header">
-          <h2>Crear Nueva Mesa</h2>
+          <h2 className="card-title">Crear Nueva Mesa</h2>
         </div>
 
         {success && <div className="alert alert-success">{success}</div>}
@@ -164,7 +190,7 @@ function MesasPage() {
 
       <div className="card">
         <div className="card-header">
-          <h2>Listado de Mesas</h2>
+          <h2 className="card-title">Listado de Mesas</h2>
         </div>
 
         {mesas.length === 0 ? (

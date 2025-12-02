@@ -1,5 +1,6 @@
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import TopBar from './TopBar'
 import HomePage from './HomePage'
 import MesasPage from './MesasPage'
 import ProductosPage from './ProductosPage'
@@ -75,6 +76,8 @@ function App() {
           </div>
         </nav>
       )}
+
+      {showNav && isAuthenticated && <TopBar />}
 
       <div className={showNav ? "main-content" : ""}>
         <Routes>
