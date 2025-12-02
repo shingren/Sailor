@@ -15,6 +15,7 @@ import LoginPage from './LoginPage'
 import NotAuthorized from './NotAuthorized'
 import StaffPage from './StaffPage'
 import CierreCajaPage from './CierreCajaPage'
+import FloorplanPage from './FloorplanPage'
 
 // Helper component for role-based route protection
 function ProtectedRoute({ children, allowedRoles }) {
@@ -78,6 +79,13 @@ function App() {
           <Route path="/mesas" element={
             <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
               <MesasPage />
+            </ProtectedRoute>
+          } />
+
+          {/* FLOORPLAN - ADMIN, MESERO */}
+          <Route path="/floorplan" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
+              <FloorplanPage />
             </ProtectedRoute>
           } />
 

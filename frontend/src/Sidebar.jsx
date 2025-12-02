@@ -37,6 +37,9 @@ function Sidebar() {
           <Link to="/mesas" className={`sidebar-link ${isActive('/mesas') ? 'active' : ''}`}>
             Mesas
           </Link>
+          <Link to="/floorplan" className={`sidebar-link ${isActive('/floorplan') ? 'active' : ''}`}>
+            Floorplan
+          </Link>
           <Link to="/productos" className={`sidebar-link ${isActive('/productos') ? 'active' : ''}`}>
             Productos
           </Link>

@@ -14,6 +14,14 @@ public class Mesa {
     private int capacidad;
     private String estado;
 
+    // Floorplan positioning
+    private Double positionX;
+    private Double positionY;
+    private String zona; // INSIDE, TERRACE, BAR
+
+    @Column(name = "group_id")
+    private Long groupId; // For joining tables
+
     public Mesa() {
     }
 
@@ -21,6 +29,7 @@ public class Mesa {
         this.codigo = codigo;
         this.capacidad = capacidad;
         this.estado = estado;
+        this.zona = "INSIDE"; // Default zone
     }
 
     public Long getId() {
@@ -53,5 +62,37 @@ public class Mesa {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public Double getPositionX() {
+        return positionX;
+    }
+
+    public void setPositionX(Double positionX) {
+        this.positionX = positionX;
+    }
+
+    public Double getPositionY() {
+        return positionY;
+    }
+
+    public void setPositionY(Double positionY) {
+        this.positionY = positionY;
+    }
+
+    public String getZona() {
+        return zona;
+    }
+
+    public void setZona(String zona) {
+        this.zona = zona;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
     }
 }
