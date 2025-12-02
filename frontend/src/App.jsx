@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import TopBar from './TopBar'
+import Sidebar from './Sidebar'
 import HomePage from './HomePage'
 import MesasPage from './MesasPage'
 import ProductosPage from './ProductosPage'
@@ -45,20 +46,7 @@ function App() {
       {showNav && (
         <nav className="navbar">
           <div className="navbar-content">
-            <Link to="/" className="navbar-brand">Sailor</Link>
-            <div className="navbar-links">
-              <Link to="/">Home</Link>
-              <Link to="/mesas">Mesas</Link>
-              <Link to="/productos">Productos</Link>
-              <Link to="/pedidos">Pedidos</Link>
-              <Link to="/cocina">Cocina</Link>
-              <Link to="/facturas">Facturas</Link>
-              <Link to="/inventario">Inventario</Link>
-              <Link to="/reservas">Reservas</Link>
-              <Link to="/reportes">Reportes</Link>
-              {(rol === 'ADMIN' || rol === 'CAJA') && <Link to="/cierre-caja">Cierre de Caja</Link>}
-              {rol === 'ADMIN' && <Link to="/staff">Staff</Link>}
-            </div>
+            <div className="navbar-title">Sailor</div>
             {isAuthenticated ? (
               <div className="navbar-user">
                 <span className="navbar-email">{email}</span>
@@ -79,7 +67,9 @@ function App() {
 
       {showNav && isAuthenticated && <TopBar />}
 
-      <div className={showNav ? "main-content" : ""}>
+      <div className="app-layout">
+        {showNav && isAuthenticated && <Sidebar />}
+        <div className={showNav ? "main-content" : ""}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -154,6 +144,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
+        </div>
       </div>
     </div>
   )
