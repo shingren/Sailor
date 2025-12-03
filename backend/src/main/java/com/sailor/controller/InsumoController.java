@@ -2,6 +2,7 @@ package com.sailor.controller;
 
 import com.sailor.dto.InsumoCreateRequestDTO;
 import com.sailor.dto.InsumoResponseDTO;
+import com.sailor.dto.InsumoUpdateRequestDTO;
 import com.sailor.dto.MovimientoCreateRequestDTO;
 import com.sailor.dto.MovimientoResponseDTO;
 import com.sailor.service.InsumoService;
@@ -30,6 +31,11 @@ public class InsumoController {
     @GetMapping
     public List<InsumoResponseDTO> listInsumos() {
         return insumoService.listInsumos();
+    }
+
+    @PutMapping("/{id}")
+    public InsumoResponseDTO updateInsumo(@PathVariable Long id, @RequestBody InsumoUpdateRequestDTO request) {
+        return insumoService.updateInsumo(id, request);
     }
 
     @PostMapping("/movimientos")

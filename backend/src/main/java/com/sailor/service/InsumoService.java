@@ -1,6 +1,7 @@
 package com.sailor.service;
 
 import com.sailor.dto.InsumoResponseDTO;
+import com.sailor.dto.InsumoUpdateRequestDTO;
 import com.sailor.dto.MovimientoCreateRequestDTO;
 import com.sailor.dto.MovimientoResponseDTO;
 import com.sailor.entity.Insumo;
@@ -39,6 +40,19 @@ public class InsumoService {
         return insumoRepository.findAll().stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public InsumoResponseDTO updateInsumo(Long id, InsumoUpdateRequestDTO request) {
+        Insumo insumo = insumoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + id));
+
+        insumo.setNombre(request.getNombre());
+        insumo.setUnidad(request.getUnidad());
+        insumo.setStockMinimo(request.getStockMinimo());
+
+        Insumo updated = insumoRepository.save(insumo);
+        return mapToResponseDTO(updated);
     }
 
     @Transactional

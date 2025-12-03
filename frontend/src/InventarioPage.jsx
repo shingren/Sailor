@@ -31,6 +31,14 @@ function InventarioPage() {
     items: [{ insumoId: '', cantidadNecesaria: 0 }]
   })
 
+  // Estado para edición de insumos
+  const [editingInsumoId, setEditingInsumoId] = useState(null)
+  const [editFormData, setEditFormData] = useState({
+    nombre: '',
+    unidad: '',
+    stockMinimo: 0
+  })
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchData()
@@ -95,6 +103,52 @@ function InventarioPage() {
       fetchData()
     } catch (err) {
       setError('Error al crear insumo: ' + err.message)
+    }
+  }
+
+  const handleEditInsumo = (insumo) => {
+    setEditingInsumoId(insumo.id)
+    setEditFormData({
+      nombre: insumo.nombre,
+      unidad: insumo.unidad,
+      stockMinimo: insumo.stockMinimo
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingInsumoId(null)
+    setEditFormData({ nombre: '', unidad: '', stockMinimo: 0 })
+  }
+
+  const handleEditChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleSaveEdit = async (insumoId) => {
+    setError('')
+    try {
+      const response = await fetch(`/api/insumos/${insumoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthHeader()
+        },
+        body: JSON.stringify(editFormData)
+      })
+
+      if (!response.ok) {
+        setError('Error al actualizar insumo')
+        return
+      }
+
+      setEditingInsumoId(null)
+      setEditFormData({ nombre: '', unidad: '', stockMinimo: 0 })
+      fetchData()
+    } catch (err) {
+      setError('Error al actualizar insumo: ' + err.message)
     }
   }
 
@@ -275,26 +329,89 @@ function InventarioPage() {
                 <th>Unidad</th>
                 <th>Stock Actual</th>
                 <th>Stock Mínimo</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {insumos.length === 0 ? (
                 <tr>
-                  <td colSpan="5">No se encontraron insumos</td>
+                  <td colSpan="6">No se encontraron insumos</td>
                 </tr>
               ) : (
-                insumos.map(insumo => (
-                  <tr key={insumo.id}>
-                    <td>{insumo.id}</td>
-                    <td>{insumo.nombre}</td>
-                    <td>{insumo.unidad}</td>
-                    <td className={insumo.stockActual < insumo.stockMinimo ? 'low-stock' : ''}>
-                      {insumo.stockActual}
-                      {insumo.stockActual < insumo.stockMinimo && ' ⚠️'}
-                    </td>
-                    <td>{insumo.stockMinimo}</td>
-                  </tr>
-                ))
+                insumos.map(insumo => {
+                  const isEditing = editingInsumoId === insumo.id
+                  return (
+                    <tr key={insumo.id}>
+                      <td>{insumo.id}</td>
+                      <td>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editFormData.nombre}
+                            onChange={(e) => handleEditChange('nombre', e.target.value)}
+                            style={{ width: '100%' }}
+                          />
+                        ) : (
+                          insumo.nombre
+                        )}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editFormData.unidad}
+                            onChange={(e) => handleEditChange('unidad', e.target.value)}
+                            style={{ width: '100%' }}
+                          />
+                        ) : (
+                          insumo.unidad
+                        )}
+                      </td>
+                      <td className={insumo.stockActual < insumo.stockMinimo ? 'low-stock' : ''}>
+                        {insumo.stockActual}
+                        {insumo.stockActual < insumo.stockMinimo && ' ⚠️'}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editFormData.stockMinimo}
+                            onChange={(e) => handleEditChange('stockMinimo', parseFloat(e.target.value))}
+                            style={{ width: '100px' }}
+                          />
+                        ) : (
+                          insumo.stockMinimo
+                        )}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <div style={{ display: 'flex', gap: '5px' }}>
+                            <button
+                              onClick={() => handleSaveEdit(insumo.id)}
+                              className="btn-success btn-small"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="btn-secondary btn-small"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditInsumo(insumo)}
+                            className="btn-primary btn-small"
+                          >
+                            Editar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
