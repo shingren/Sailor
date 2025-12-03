@@ -22,6 +22,9 @@ public class Mesa {
     @Column(name = "group_id")
     private Long groupId; // For joining tables
 
+    @Column(name = "is_locked")
+    private Boolean isLocked = false; // Lock table position
+
     @ManyToOne
     @JoinColumn(name = "location_id")
     private Location location;
@@ -106,5 +109,13 @@ public class Mesa {
 
     public void setLocation(Location location) {
         this.location = location;
+    }
+
+    public Boolean getIsLocked() {
+        return isLocked;
+    }
+
+    public void setIsLocked(Boolean isLocked) {
+        this.isLocked = isLocked;
     }
 }

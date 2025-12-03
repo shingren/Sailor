@@ -6,6 +6,7 @@ function FloorplanPage() {
   const { isAuthenticated, getAuthHeader } = useAuth()
   const navigate = useNavigate()
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
 
   const [mesas, setMesas] = useState([])
   const [locations, setLocations] = useState([])
@@ -15,6 +16,7 @@ function FloorplanPage() {
   const [selectedMesas, setSelectedMesas] = useState([])
   const [draggedMesa, setDraggedMesa] = useState(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 700 })
 
   // Canvas transform state
   const [scale, setScale] = useState(1)
@@ -23,8 +25,22 @@ function FloorplanPage() {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
   const TABLE_RADIUS = 30
-  const CANVAS_WIDTH = 1200
-  const CANVAS_HEIGHT = 700
+
+  // Resize canvas to fit container
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth
+        const width = Math.max(containerWidth - 40, 1200) // Min 1200px
+        const height = Math.max(700, Math.min(800, window.innerHeight - 400))
+        setCanvasSize({ width, height })
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -36,7 +52,7 @@ function FloorplanPage() {
     if (!loading && mesas.length > 0) {
       drawCanvas()
     }
-  }, [mesas, selectedLocation, scale, panOffset, selectedMesas])
+  }, [mesas, selectedLocation, scale, panOffset, selectedMesas, canvasSize])
 
   const fetchData = async () => {
     setLoading(true)
@@ -108,7 +124,7 @@ function FloorplanPage() {
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     // Apply transformations
     ctx.save()
@@ -118,16 +134,16 @@ function FloorplanPage() {
     // Draw grid
     ctx.strokeStyle = '#e5e7eb'
     ctx.lineWidth = 1 / scale
-    for (let x = 0; x < CANVAS_WIDTH; x += 50) {
+    for (let x = 0; x < canvasSize.width; x += 50) {
       ctx.beginPath()
       ctx.moveTo(x, 0)
-      ctx.lineTo(x, CANVAS_HEIGHT)
+      ctx.lineTo(x, canvasSize.height)
       ctx.stroke()
     }
-    for (let y = 0; y < CANVAS_HEIGHT; y += 50) {
+    for (let y = 0; y < canvasSize.height; y += 50) {
       ctx.beginPath()
       ctx.moveTo(0, y)
-      ctx.lineTo(CANVAS_WIDTH, y)
+      ctx.lineTo(canvasSize.width, y)
       ctx.stroke()
     }
 
@@ -160,11 +176,20 @@ function FloorplanPage() {
         ctx.stroke()
       }
 
+      // Draw lock indicator if locked
+      if (mesa.isLocked) {
+        ctx.fillStyle = '#dc2626' // red
+        ctx.font = `bold ${16 / scale}px Arial`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('🔒', x + TABLE_RADIUS - 10, y - TABLE_RADIUS + 10)
+      }
+
       // Draw group indicator if joined
       if (mesa.groupId) {
         ctx.fillStyle = '#3b82f6'
         ctx.beginPath()
-        ctx.arc(x + TABLE_RADIUS - 10, y - TABLE_RADIUS + 10, 6, 0, 2 * Math.PI)
+        ctx.arc(x - TABLE_RADIUS + 10, y - TABLE_RADIUS + 10, 6, 0, 2 * Math.PI)
         ctx.fill()
       }
 
@@ -211,13 +236,19 @@ function FloorplanPage() {
         setSelectedMesas([...selectedMesas, mesa.id])
       }
     } else if (mesa) {
-      // Start dragging
-      setDraggedMesa(mesa)
-      setDragOffset({
-        x: x - (mesa.positionX || 100),
-        y: y - (mesa.positionY || 100)
-      })
-      setSelectedMesas([mesa.id])
+      // Check if mesa is locked
+      if (mesa.isLocked) {
+        // Can't drag locked mesa, but can select it
+        setSelectedMesas([mesa.id])
+      } else {
+        // Start dragging
+        setDraggedMesa(mesa)
+        setDragOffset({
+          x: x - (mesa.positionX || 100),
+          y: y - (mesa.positionY || 100)
+        })
+        setSelectedMesas([mesa.id])
+      }
     } else {
       // Start panning
       setIsPanning(true)
@@ -237,6 +268,8 @@ function FloorplanPage() {
           ? { ...m, positionX: newX, positionY: newY }
           : m
       ))
+      // Update draggedMesa to reflect new position
+      setDraggedMesa({ ...draggedMesa, positionX: newX, positionY: newY })
     } else if (isPanning) {
       setPanOffset({
         x: e.clientX - panStart.x,
@@ -247,7 +280,7 @@ function FloorplanPage() {
 
   const handleCanvasMouseUp = async () => {
     if (draggedMesa) {
-      // Save position to backend
+      // Save position to backend with current draggedMesa state
       try {
         await fetch(`/api/mesas/${draggedMesa.id}/position`, {
           method: 'PUT',
@@ -266,6 +299,28 @@ function FloorplanPage() {
       setDraggedMesa(null)
     }
     setIsPanning(false)
+  }
+
+  const handleToggleLock = async () => {
+    if (selectedMesas.length !== 1) {
+      alert('Selecciona exactamente una mesa para bloquear/desbloquear')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/mesas/${selectedMesas[0]}/lock`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': getAuthHeader()
+        }
+      })
+
+      if (response.ok) {
+        fetchData()
+      }
+    } catch (err) {
+      setError('Error al bloquear/desbloquear mesa: ' + err.message)
+    }
   }
 
   const handleJoinTables = async () => {
@@ -322,7 +377,8 @@ function FloorplanPage() {
       alert('Selecciona exactamente una mesa para abrir pedido')
       return
     }
-    navigate('/pedidos')
+    // Navigate to pedidos page with mesa preselected
+    navigate(`/pedidos?mesaId=${selectedMesas[0]}`)
   }
 
   const handleZoomToLocation = (locationId) => {
@@ -411,6 +467,14 @@ function FloorplanPage() {
             <button onClick={handleSplitTable} className="btn-secondary btn-small" disabled={selectedMesas.length !== 1}>
               Separar Mesa
             </button>
+            <button
+              onClick={handleToggleLock}
+              className="btn-warning btn-small"
+              disabled={selectedMesas.length !== 1}
+              title={selectedMesas.length === 1 && mesas.find(m => m.id === selectedMesas[0])?.isLocked ? 'Desbloquear mesa' : 'Bloquear mesa'}
+            >
+              {selectedMesas.length === 1 && mesas.find(m => m.id === selectedMesas[0])?.isLocked ? '🔓 Desbloquear' : '🔒 Bloquear'}
+            </button>
             <button onClick={handleOpenOrder} className="btn-success btn-small" disabled={selectedMesas.length !== 1}>
               Abrir Pedido
             </button>
@@ -438,22 +502,26 @@ function FloorplanPage() {
             <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '3px solid #3b82f6', backgroundColor: '#fff' }}></div>
             <span>Mesas Unidas (punto azul)</span>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🔒</span>
+            <span>Mesa Bloqueada (posición fija)</span>
+          </div>
         </div>
         <p style={{ marginTop: '10px', fontSize: '14px', color: '#6b7280' }}>
-          <strong>Consejo:</strong> Haz clic y arrastra para mover mesas. Shift+Clic para seleccionar múltiples mesas. Haz clic en el espacio vacío y arrastra para desplazar el plano. El estado se gestiona desde la página de Mesas.
+          <strong>Consejo:</strong> Haz clic y arrastra para mover mesas. Shift+Clic para seleccionar múltiples mesas. Haz clic en el espacio vacío y arrastra para desplazar el plano. Las mesas bloqueadas no se pueden arrastrar. El estado se gestiona desde la página de Mesas.
         </p>
       </div>
 
       {/* Canvas */}
-      <div className="card">
+      <div className="card" ref={containerRef}>
         {loading ? (
           <div className="loading">Cargando plano de sala...</div>
         ) : (
           <div style={{ overflow: 'hidden', border: '2px solid #e5e7eb', borderRadius: '8px' }}>
             <canvas
               ref={canvasRef}
-              width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
+              width={canvasSize.width}
+              height={canvasSize.height}
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={handleCanvasMouseMove}
               onMouseUp={handleCanvasMouseUp}

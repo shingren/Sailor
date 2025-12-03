@@ -77,11 +77,27 @@ public class MesaController {
             @RequestBody UpdateMesaPositionDTO dto) {
         return mesaRepository.findById(id)
                 .map(mesa -> {
-                    mesa.setPositionX(dto.getPositionX());
-                    mesa.setPositionY(dto.getPositionY());
-                    if (dto.getZona() != null) {
-                        mesa.setZona(dto.getZona());
+                    // Only update position if table is not locked
+                    if (mesa.getIsLocked() == null || !mesa.getIsLocked()) {
+                        mesa.setPositionX(dto.getPositionX());
+                        mesa.setPositionY(dto.getPositionY());
+                        if (dto.getZona() != null) {
+                            mesa.setZona(dto.getZona());
+                        }
                     }
+                    Mesa updated = mesaRepository.save(mesa);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/lock")
+    public ResponseEntity<Mesa> toggleMesaLock(@PathVariable Long id) {
+        return mesaRepository.findById(id)
+                .map(mesa -> {
+                    // Toggle lock state
+                    Boolean currentLock = mesa.getIsLocked();
+                    mesa.setIsLocked(currentLock == null || !currentLock);
                     Mesa updated = mesaRepository.save(mesa);
                     return ResponseEntity.ok(updated);
                 })

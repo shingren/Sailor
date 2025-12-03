@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 function PedidosPage() {
   const { isAuthenticated, getAuthHeader } = useAuth()
+  const location = useLocation()
 
   const [pedidos, setPedidos] = useState([])
   const [mesas, setMesas] = useState([])
@@ -27,6 +28,18 @@ function PedidosPage() {
       fetchProductos()
     }
   }, [isAuthenticated])
+
+  // Pre-fill mesa from query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const mesaId = params.get('mesaId')
+    if (mesaId && mesas.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        mesaId: mesaId
+      }))
+    }
+  }, [location.search, mesas])
 
   const fetchPedidos = async () => {
     setLoading(true)
