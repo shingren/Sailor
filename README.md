@@ -80,7 +80,7 @@ Esta es la forma más rápida y sencilla de ejecutar todo el stack completo.
 
 1. **Clonar el repositorio**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/AArCh95/Sailor.git
    cd Sailor
    ```
 
@@ -266,7 +266,7 @@ Este proyecto utiliza un flujo de trabajo basado en Git con ramas de caracterís
 
 1. **Clonar el repositorio** (si aún no lo has hecho)
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/AArCh95/Sailor.git
    cd Sailor
    ```
 
