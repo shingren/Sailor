@@ -35,7 +35,10 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
 - **Authentication**: Context-based with JWT tokens stored in localStorage
   - AuthContext provides: `email`, `rol`, `isAuthenticated`, `login()`, `logout()`, `getAuthHeader()`, `hasRole()`
   - Access and refresh tokens persisted in localStorage
+  - Token refresh is automatic when access token expires
 - **Pages**: HomePage, LoginPage, MesasPage, ProductosPage, PedidosPage, FacturasPage, InventarioPage, ReservasPage, CocinaPage, ReportesPage, StaffPage, CierreCajaPage
+  - All pages follow consistent patterns: loading states, error handling, and authentication checks
+  - Spanish language UI throughout the application
 - **API calls**: Use relative `/api/...` paths with `getAuthHeader()` for Bearer token authorization
 - **Role-based UI**: Use `hasRole(roleName)` to conditionally render UI elements based on user role
 
@@ -59,9 +62,14 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
 - **Factura** (Invoice): Many-to-One with Pedido, One-to-Many with Pago
 - **Pago** (Payment): Many-to-One with Factura, has `metodoPago` field (EFECTIVO, TARJETA)
 - **Insumo** (Ingredient): Standalone ingredient/supply entity with stock tracking
+  - Fields: nombre, unidad, stockActual, stockMinimo
+  - Stock is modified only through MovimientoInsumo, not directly
+  - Supports editing via PUT endpoint (nombre, unidad, stockMinimo only)
 - **Receta** (Recipe): One-to-Many with RecetaItem, Many-to-One with Producto
 - **RecetaItem**: Many-to-One with both Receta and Insumo
 - **MovimientoInsumo** (Inventory Movement): Many-to-One with Insumo, tracks stock changes
+  - Types: COMPRA (purchase, positive), AJUSTE (adjustment, can be +/-), CONSUMO (consumption, negative)
+  - Automatically updates Insumo.stockActual on creation
 - **Reserva** (Reservation): Many-to-One with Mesa
 - **CierreCaja** (Cash Register Closure): Many-to-One with Usuario, unique per date
   - Tracks daily sales, payments by method, expected vs actual cash, and discrepancies
@@ -133,9 +141,9 @@ npm run build
 ### Default Users
 Created by `DataInitializer` on first startup:
 - Admin: admin@sailor.com / admin123 (role: ADMIN)
-- User: user@sailor.com / user123 (role: USER - limited access)
+- User: user@sailor.com / user123 (role: MESERO)
 
-**Note**: The default `USER` role has very limited access. For production use, create users with specific roles (MESERO, COCINA, CAJA, INVENTARIO, GERENCIA) via the `/usuarios` endpoint (ADMIN only).
+**Note**: For production use, create additional users with specific roles (MESERO, COCINA, CAJA, INVENTARIO, GERENCIA) via the StaffPage UI or `/usuarios` endpoint (ADMIN only).
 
 ### Roles & Permissions
 | Role | Permissions |
@@ -162,8 +170,9 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 
 #### User Management (ADMIN only)
 - `GET /usuarios` - List all users
-- `POST /usuarios` - Create new user
-- `PATCH /usuarios/{id}/rol` - Update user role
+- `POST /usuarios` - Create new user (requires email, password, rol)
+- `PUT /usuarios/{id}/rol` - Update user role (requires rol in body)
+- `DELETE /usuarios/{id}` - Delete user
 
 #### Tables (ADMIN, MESERO)
 - `GET /mesas` - List all tables
@@ -194,7 +203,10 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 
 #### Inventory (ADMIN, INVENTARIO)
 - `GET /insumos` - List ingredients/supplies
-- `POST /insumos` - Create ingredient
+- `POST /insumos` - Create ingredient (nombre, unidad, stockActual, stockMinimo)
+- `PUT /insumos/{id}` - Update ingredient (nombre, unidad, stockMinimo only - stock modified via movements)
+- `GET /insumos/movimientos` - List inventory movements
+- `POST /insumos/movimientos` - Create movement (insumoId, cantidad, tipo: COMPRA/AJUSTE/CONSUMO, descripcion)
 - `GET /recetas` - List recipes
 - `POST /recetas` - Create recipe linking products to ingredients
 
@@ -206,9 +218,10 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 - `GET /reportes/*` - Various analytics and reports
 
 #### Cash Register Closure (ADMIN, CAJA)
-- `GET /cierre-caja` - List cash register closures
-- `POST /cierre-caja` - Create daily cash register closure
-- `GET /cierre-caja/resumen/{fecha}` - Get summary for a specific date
+- `GET /cierre-caja` - List all cash register closures
+- `POST /cierre-caja` - Create daily cash register closure (saldoReal, saldoInicial)
+- `GET /cierre-caja/resumen-dia?saldoInicial={amount}` - Get summary for today (optional saldoInicial query param)
+  - Returns: fecha, totalVentasDia, totalEfectivo, totalTarjeta, cantidadFacturas, saldoEsperado, cierreExiste
 
 ## Making Changes
 
@@ -243,3 +256,24 @@ When working with orders, respect the state machine defined in [PedidoEstado.jav
 - Valid states: `PENDIENTE` → `PREPARACION` → `LISTO` → `ENTREGADO`
 - Invalid transitions are rejected by `PedidoEstado.isValidTransition()`
 - Use `PATCH /pedidos/{id}/estado` to transition between states
+
+### Inventory Management Patterns
+When working with inventory:
+- **Never modify stockActual directly** - always use MovimientoInsumo
+- **Editing insumos**: Use PUT /insumos/{id} with InsumoUpdateRequestDTO (nombre, unidad, stockMinimo)
+  - stockActual is read-only and managed through movements
+- **Movement types**:
+  - `COMPRA`: Purchase/restocking (positive quantity)
+  - `AJUSTE`: Stock adjustment (can be positive or negative)
+  - `CONSUMO`: Usage/consumption (negative quantity, typically from recipe execution)
+- **Stock validation**: Movements that would result in negative stock are rejected
+
+### Common Frontend Patterns
+All page components follow these conventions:
+1. **Authentication check**: Redirect to login if not authenticated
+2. **Loading state**: Show loading indicator while fetching data
+3. **Error handling**: Display error messages in alert components
+4. **Success feedback**: Show success messages after mutations
+5. **Authorization**: Use `getAuthHeader()` for all API calls
+6. **Role-based rendering**: Use `hasRole()` to conditionally show/hide features
+7. **Spanish UI**: All user-facing text is in Spanish
