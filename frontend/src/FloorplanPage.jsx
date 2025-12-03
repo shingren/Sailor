@@ -72,7 +72,7 @@ function FloorplanPage() {
         }
       }
     } catch (err) {
-      setError('Error loading data: ' + err.message)
+      setError('Error al cargar datos: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -270,7 +270,7 @@ function FloorplanPage() {
 
   const handleJoinTables = async () => {
     if (selectedMesas.length < 2) {
-      alert('Select at least 2 tables to join (use Shift+Click)')
+      alert('Selecciona al menos 2 mesas para unir (usa Shift+Click)')
       return
     }
 
@@ -289,13 +289,13 @@ function FloorplanPage() {
         setSelectedMesas([])
       }
     } catch (err) {
-      setError('Error joining tables: ' + err.message)
+      setError('Error al unir mesas: ' + err.message)
     }
   }
 
   const handleSplitTable = async () => {
     if (selectedMesas.length !== 1) {
-      alert('Select exactly one table to split')
+      alert('Selecciona exactamente una mesa para separar')
       return
     }
 
@@ -313,13 +313,13 @@ function FloorplanPage() {
         setSelectedMesas([])
       }
     } catch (err) {
-      setError('Error splitting table: ' + err.message)
+      setError('Error al separar mesa: ' + err.message)
     }
   }
 
   const handleOpenOrder = () => {
     if (selectedMesas.length !== 1) {
-      alert('Select exactly one table to open order')
+      alert('Selecciona exactamente una mesa para abrir pedido')
       return
     }
     navigate('/pedidos')
@@ -340,9 +340,9 @@ function FloorplanPage() {
     return (
       <div className="centered-container">
         <div className="card">
-          <h2>Floorplan</h2>
-          <p>You must log in to view this page</p>
-          <Link to="/login" className="btn-primary">Go to Login</Link>
+          <h2>Plano de Sala</h2>
+          <p>Debes iniciar sesión para ver esta página</p>
+          <Link to="/login" className="btn-primary">Ir a Iniciar Sesión</Link>
         </div>
       </div>
     )
@@ -350,7 +350,7 @@ function FloorplanPage() {
 
   return (
     <div>
-      <h1>Interactive Floorplan</h1>
+      <h1>Plano de Sala Interactivo</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -359,14 +359,14 @@ function FloorplanPage() {
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Location Selection */}
           <div>
-            <label htmlFor="location-select" style={{ marginRight: '10px' }}>Location:</label>
+            <label htmlFor="location-select" style={{ marginRight: '10px' }}>Ubicación:</label>
             <select
               id="location-select"
               value={selectedLocation || ''}
               onChange={(e) => setSelectedLocation(e.target.value ? parseInt(e.target.value) : null)}
               style={{ padding: '8px' }}
             >
-              <option value="">-- No Location --</option>
+              <option value="">-- Sin Ubicación --</option>
               {locations.map(location => (
                 <option key={location.id} value={location.id}>
                   {location.name}
@@ -378,13 +378,13 @@ function FloorplanPage() {
           {/* Zoom Controls */}
           <div style={{ display: 'flex', gap: '5px' }}>
             <button onClick={() => setScale(s => Math.min(s + 0.1, 2))} className="btn-secondary btn-small">
-              Zoom In
+              Acercar
             </button>
             <button onClick={() => setScale(s => Math.max(s - 0.1, 0.5))} className="btn-secondary btn-small">
-              Zoom Out
+              Alejar
             </button>
             <button onClick={handleResetView} className="btn-secondary btn-small">
-              Reset View
+              Restablecer Vista
             </button>
           </div>
 
@@ -397,7 +397,7 @@ function FloorplanPage() {
                   onClick={() => handleZoomToLocation(location.id)}
                   className="btn-secondary btn-small"
                 >
-                  Zoom to {location.name}
+                  Ir a {location.name}
                 </button>
               ))}
             </div>
@@ -406,13 +406,13 @@ function FloorplanPage() {
           {/* Table Actions */}
           <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
             <button onClick={handleJoinTables} className="btn-primary btn-small" disabled={selectedMesas.length < 2}>
-              Join Tables ({selectedMesas.length})
+              Unir Mesas ({selectedMesas.length})
             </button>
             <button onClick={handleSplitTable} className="btn-secondary btn-small" disabled={selectedMesas.length !== 1}>
-              Split Table
+              Separar Mesa
             </button>
             <button onClick={handleOpenOrder} className="btn-success btn-small" disabled={selectedMesas.length !== 1}>
-              Open Order
+              Abrir Pedido
             </button>
           </div>
         </div>
@@ -420,34 +420,34 @@ function FloorplanPage() {
 
       {/* Legend */}
       <div className="card" style={{ marginBottom: '20px' }}>
-        <strong>Status Legend:</strong>
+        <strong>Leyenda de Estados:</strong>
         <div style={{ display: 'flex', gap: '20px', marginTop: '10px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
-            <span>Free</span>
+            <span>Libre</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
-            <span>Occupied</span>
+            <span>Ocupada</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
-            <span>Reserved</span>
+            <span>Reservada</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '3px solid #3b82f6', backgroundColor: '#fff' }}></div>
-            <span>Joined Tables (blue dot)</span>
+            <span>Mesas Unidas (punto azul)</span>
           </div>
         </div>
         <p style={{ marginTop: '10px', fontSize: '14px', color: '#6b7280' }}>
-          <strong>Tip:</strong> Click and drag to move tables. Shift+Click to select multiple tables. Click empty space and drag to pan. Status is managed from the Mesas page.
+          <strong>Consejo:</strong> Haz clic y arrastra para mover mesas. Shift+Clic para seleccionar múltiples mesas. Haz clic en el espacio vacío y arrastra para desplazar el plano. El estado se gestiona desde la página de Mesas.
         </p>
       </div>
 
       {/* Canvas */}
       <div className="card">
         {loading ? (
-          <div className="loading">Loading floorplan...</div>
+          <div className="loading">Cargando plano de sala...</div>
         ) : (
           <div style={{ overflow: 'hidden', border: '2px solid #e5e7eb', borderRadius: '8px' }}>
             <canvas

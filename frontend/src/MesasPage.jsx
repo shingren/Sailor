@@ -38,10 +38,10 @@ function MesasPage() {
         }
       })
       if (response.status === 401) {
-        setError('Not authorized - please log in again')
+        setError('No autorizado - por favor inicia sesión nuevamente')
         return
       }
-      if (!response.ok) throw new Error('Error loading mesas')
+      if (!response.ok) throw new Error('Error al cargar mesas')
       const data = await response.json()
       setMesas(data)
     } catch (err) {
@@ -87,18 +87,18 @@ function MesasPage() {
       if (response.ok) {
         setNewLocationName('')
         fetchLocations()
-        setSuccess(`Location "${newLocationName}" created successfully!`)
+        setSuccess(`Ubicación "${newLocationName}" creada exitosamente!`)
         setTimeout(() => setSuccess(null), 3000)
       } else {
-        setCreateError('Failed to create location - it may already exist')
+        setCreateError('No se pudo crear la ubicación - puede que ya exista')
       }
     } catch (err) {
-      setCreateError('Error creating location: ' + err.message)
+      setCreateError('Error al crear ubicación: ' + err.message)
     }
   }
 
   const handleDeleteLocation = async (locationId) => {
-    if (!confirm('Are you sure you want to delete this location?')) return
+    if (!confirm('¿Estás seguro de que deseas eliminar esta ubicación?')) return
 
     try {
       const response = await fetch(`/api/locations/${locationId}`, {
@@ -110,11 +110,11 @@ function MesasPage() {
 
       if (response.ok) {
         fetchLocations()
-        setSuccess('Location deleted successfully!')
+        setSuccess('Ubicación eliminada exitosamente!')
         setTimeout(() => setSuccess(null), 3000)
       }
     } catch (err) {
-      setError('Error deleting location: ' + err.message)
+      setError('Error al eliminar ubicación: ' + err.message)
     }
   }
 
@@ -145,12 +145,12 @@ function MesasPage() {
       })
 
       if (response.status === 401) {
-        setCreateError('Not authorized - please log in again')
+        setCreateError('No autorizado - por favor inicia sesión nuevamente')
         return
       }
-      if (!response.ok) throw new Error('Error creating mesa')
+      if (!response.ok) throw new Error('Error al crear mesa')
 
-      setSuccess(`Mesa "${formData.codigo}" created successfully!`)
+      setSuccess(`Mesa "${formData.codigo}" creada exitosamente!`)
       setFormData({ codigo: '', capacidad: '', estado: 'disponible', locationId: '' })
       fetchMesas()
     } catch (err) {
@@ -173,7 +173,7 @@ function MesasPage() {
         fetchMesas()
       }
     } catch (err) {
-      setError('Error updating status: ' + err.message)
+      setError('Error al actualizar estado: ' + err.message)
     }
   }
 
@@ -190,7 +190,7 @@ function MesasPage() {
         fetchMesas()
       }
     } catch (err) {
-      setError('Error updating location: ' + err.message)
+      setError('Error al actualizar ubicación: ' + err.message)
     }
   }
 
@@ -198,9 +198,9 @@ function MesasPage() {
     return (
       <div className="centered-container">
         <div className="card">
-          <h2>Authentication Required</h2>
-          <p>You must log in to view this page.</p>
-          <Link to="/login" className="btn-primary">Go to Login</Link>
+          <h2>Autenticación Requerida</h2>
+          <p>Debes iniciar sesión para ver esta página.</p>
+          <Link to="/login" className="btn-primary">Ir a Iniciar Sesión</Link>
         </div>
       </div>
     )
@@ -213,7 +213,7 @@ function MesasPage() {
     })
   }
 
-  if (loading) return <div className="loading">Loading mesas</div>
+  if (loading) return <div className="loading">Cargando mesas</div>
   if (error) return <div className="alert alert-error">Error: {error}</div>
 
   // Calculate summary statistics
@@ -252,31 +252,31 @@ function MesasPage() {
       {/* Location Management */}
       <div className="card">
         <div className="card-header">
-          <h2 className="card-title">Manage Locations</h2>
+          <h2 className="card-title">Gestionar Ubicaciones</h2>
         </div>
         <form onSubmit={handleCreateLocation} style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <label htmlFor="newLocation">Create New Location:</label>
+              <label htmlFor="newLocation">Crear Nueva Ubicación:</label>
               <input
                 id="newLocation"
                 type="text"
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
-                placeholder="e.g., Inside, Terrace, Bar"
+                placeholder="ej: Interior, Terraza, Barra"
               />
             </div>
-            <button type="submit" className="btn-primary">Create Location</button>
+            <button type="submit" className="btn-primary">Crear Ubicación</button>
           </div>
         </form>
 
         {loadingLocations ? (
-          <div className="loading">Loading locations...</div>
+          <div className="loading">Cargando ubicaciones...</div>
         ) : (
           <div>
-            <strong>Existing Locations:</strong>
+            <strong>Ubicaciones Existentes:</strong>
             {locations.length === 0 ? (
-              <p className="text-muted">No locations created yet</p>
+              <p className="text-muted">No hay ubicaciones creadas aún</p>
             ) : (
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
                 {locations.map(location => (
@@ -341,20 +341,20 @@ function MesasPage() {
                 onChange={handleChange}
                 required
               >
-                <option value="disponible">Free</option>
-                <option value="ocupada">Occupied</option>
+                <option value="disponible">Libre</option>
+                <option value="ocupada">Ocupada</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label htmlFor="locationId">Location</label>
+              <label htmlFor="locationId">Ubicación</label>
               <select
                 id="locationId"
                 name="locationId"
                 value={formData.locationId}
                 onChange={handleChange}
               >
-                <option value="">-- Select Location --</option>
+                <option value="">-- Seleccionar Ubicación --</option>
                 {locations.map(location => (
                   <option key={location.id} value={location.id}>
                     {location.name}
@@ -383,8 +383,8 @@ function MesasPage() {
                 <th>ID</th>
                 <th>Código</th>
                 <th>Capacidad</th>
-                <th>Status</th>
-                <th>Location</th>
+                <th>Estado</th>
+                <th>Ubicación</th>
               </tr>
             </thead>
             <tbody>
@@ -404,8 +404,8 @@ function MesasPage() {
                       }`}
                       style={{ border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
                     >
-                      <option value="disponible">FREE</option>
-                      <option value="ocupada">OCCUPIED</option>
+                      <option value="disponible">LIBRE</option>
+                      <option value="ocupada">OCUPADA</option>
                     </select>
                   </td>
                   <td>
@@ -414,7 +414,7 @@ function MesasPage() {
                       onChange={(e) => handleLocationChange(mesa.id, e.target.value)}
                       style={{ padding: '4px 8px' }}
                     >
-                      <option value="">-- No Location --</option>
+                      <option value="">-- Sin Ubicación --</option>
                       {locations.map(location => (
                         <option key={location.id} value={location.id}>
                           {location.name}

@@ -19,7 +19,7 @@ function LoginPage() {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      setError('Invalid credentials. Please check your email and password.')
+      setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.')
     } finally {
       setLoading(false)
     }
@@ -28,7 +28,7 @@ function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1 className="login-title">Sign in to Sailor</h1>
+        <h1 className="login-title">Iniciar sesión en Sailor</h1>
 
         {error && (
           <div className="alert alert-error">
@@ -38,7 +38,7 @@ function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="email">Correo Electrónico</label>
             <input
               id="email"
               type="email"
@@ -51,13 +51,13 @@ function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Contraseña</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Ingresa tu contraseña"
               required
             />
           </div>
@@ -67,7 +67,7 @@ function LoginPage() {
             disabled={loading}
             className="btn-primary btn-full-width"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
         </form>
       </div>

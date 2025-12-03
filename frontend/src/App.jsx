@@ -52,13 +52,13 @@ function App() {
               <div className="navbar-user">
                 <span className="navbar-email">{email}</span>
                 <button onClick={handleLogout} className="btn-secondary btn-small">
-                  Logout
+                  Cerrar sesión
                 </button>
               </div>
             ) : (
               <div className="navbar-user">
                 <Link to="/login" className="btn-primary btn-small">
-                  Login
+                  Iniciar sesión
                 </Link>
               </div>
             )}

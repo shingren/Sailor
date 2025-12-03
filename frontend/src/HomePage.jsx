@@ -15,7 +15,7 @@ function HomePage() {
   if (error) {
     return (
       <div className="alert alert-error">
-        Error loading health status: {error}
+        Error al cargar estado del sistema: {error}
       </div>
     )
   }
@@ -24,13 +24,13 @@ function HomePage() {
     <div>
       <div className="home-hero">
         <h1>Sailor</h1>
-        <p>Restaurant & Bar Management System</p>
+        <p>Sistema de Gestión de Restaurante y Bar</p>
         {healthStatus && (
           <div className="alert alert-success">
-            System Status: <strong>{healthStatus}</strong>
+            Estado del Sistema: <strong>{healthStatus}</strong>
           </div>
         )}
-        {!healthStatus && <div className="loading">Checking system status</div>}
+        {!healthStatus && <div className="loading">Verificando estado del sistema</div>}
       </div>
 
       <div className="quick-links">
@@ -51,7 +51,7 @@ function HomePage() {
 
         <Link to="/cocina" className="quick-link-card">
           <h3>Cocina</h3>
-          <p>Operaciones y estado de pedidos</p>
+          <p>Vista de cocina y estado de pedidos</p>
         </Link>
 
         <Link to="/facturas" className="quick-link-card">
@@ -71,7 +71,7 @@ function HomePage() {
 
         <Link to="/reportes" className="quick-link-card">
           <h3>Reportes</h3>
-          <p>Análisis y KPIs del negocio</p>
+          <p>Análisis y reportes del negocio</p>
         </Link>
       </div>
     </div>

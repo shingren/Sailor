@@ -32,10 +32,10 @@ function ProductosPage() {
         }
       })
       if (response.status === 401) {
-        setError('Not authorized - please log in again')
+        setError('No autorizado - por favor inicia sesión nuevamente')
         return
       }
-      if (!response.ok) throw new Error('Error loading productos')
+      if (!response.ok) throw new Error('Error al cargar productos')
       const data = await response.json()
       setProductos(data)
     } catch (err) {
@@ -65,10 +65,10 @@ function ProductosPage() {
       })
 
       if (response.status === 401) {
-        setCreateError('Not authorized - please log in again')
+        setCreateError('No autorizado - por favor inicia sesión nuevamente')
         return
       }
-      if (!response.ok) throw new Error('Error creating producto')
+      if (!response.ok) throw new Error('Error al crear producto')
 
       setFormData({ nombre: '', categoria: '', precio: '', activo: true })
       fetchProductos()
@@ -90,14 +90,14 @@ function ProductosPage() {
       <div className="centered-container">
         <div className="card">
           <h2>Productos</h2>
-          <p>You must log in to view this page.</p>
-          <Link to="/login" className="btn-primary">Go to Login</Link>
+          <p>Debes iniciar sesión para ver esta página.</p>
+          <Link to="/login" className="btn-primary">Ir a Iniciar Sesión</Link>
         </div>
       </div>
     )
   }
 
-  if (loading) return <div className="loading">Loading</div>
+  if (loading) return <div className="loading">Cargando</div>
   if (error) return <div className="alert alert-error">{error}</div>
 
   return (
@@ -106,7 +106,7 @@ function ProductosPage() {
 
       <div className="card">
         <div className="card-header">
-          <h2>Create New Producto</h2>
+          <h2>Crear Nuevo Producto</h2>
         </div>
         <form onSubmit={handleSubmit}>
           <div>
@@ -124,7 +124,7 @@ function ProductosPage() {
           </div>
           <div>
             <label htmlFor="categoria">
-              Categoria:
+              Categoría:
             </label>
             <input
               id="categoria"
@@ -160,24 +160,24 @@ function ProductosPage() {
               />
             </label>
           </div>
-          <button type="submit" className="btn-primary">Create Producto</button>
+          <button type="submit" className="btn-primary">Crear Producto</button>
         </form>
         {createError && <div className="alert alert-error">{createError}</div>}
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h2>Producto List</h2>
+          <h2>Listado de Productos</h2>
         </div>
         {productos.length === 0 ? (
-          <p>No productos found</p>
+          <p>No se encontraron productos</p>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Categoria</th>
+                <th>Categoría</th>
                 <th>Precio</th>
                 <th>Activo</th>
               </tr>
@@ -191,9 +191,9 @@ function ProductosPage() {
                   <td>${producto.precio.toFixed(2)}</td>
                   <td>
                     {producto.activo ? (
-                      <span className="badge badge-green">Active</span>
+                      <span className="badge badge-green">Activo</span>
                     ) : (
-                      <span className="badge badge-gray">Inactive</span>
+                      <span className="badge badge-gray">Inactivo</span>
                     )}
                   </td>
                 </tr>

@@ -32,13 +32,13 @@ function Sidebar() {
       {isExpanded && (
         <nav className="sidebar-nav">
           <Link to="/" className={`sidebar-link ${isActive('/') ? 'active' : ''}`}>
-            Home
+            Inicio
           </Link>
           <Link to="/mesas" className={`sidebar-link ${isActive('/mesas') ? 'active' : ''}`}>
             Mesas
           </Link>
           <Link to="/floorplan" className={`sidebar-link ${isActive('/floorplan') ? 'active' : ''}`}>
-            Floorplan
+            Plano de Sala
           </Link>
           <Link to="/productos" className={`sidebar-link ${isActive('/productos') ? 'active' : ''}`}>
             Productos
@@ -68,7 +68,7 @@ function Sidebar() {
           )}
           {rol === 'ADMIN' && (
             <Link to="/staff" className={`sidebar-link ${isActive('/staff') ? 'active' : ''}`}>
-              Staff
+              Personal
             </Link>
           )}
         </nav>
