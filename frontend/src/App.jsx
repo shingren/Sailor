@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
@@ -28,133 +28,154 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children
 }
 
-function App() {
-  const { isAuthenticated, email, rol, logout } = useAuth()
+// Layout wrapper for authenticated pages
+function AuthenticatedLayout({ children }) {
+  const { email, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
-  // Don't show navbar on login page
-  const showNav = location.pathname !== '/login'
-
-  // Show login button when not authenticated
   return (
     <div className="app-container">
-      {showNav && (
-        <nav className="navbar">
-          <div className="navbar-content">
-            <div className="navbar-title">Sailor</div>
-            {isAuthenticated ? (
-              <div className="navbar-user">
-                <span className="navbar-email">{email}</span>
-                <button onClick={handleLogout} className="btn-secondary btn-small">
-                  Cerrar sesión
-                </button>
-              </div>
-            ) : (
-              <div className="navbar-user">
-                <Link to="/login" className="btn-primary btn-small">
-                  Iniciar sesión
-                </Link>
-              </div>
-            )}
+      <nav className="navbar">
+        <div className="navbar-content">
+          <div className="navbar-title">Sailor</div>
+          <div className="navbar-user">
+            <span className="navbar-email">{email}</span>
+            <button onClick={handleLogout} className="btn-secondary btn-small">
+              Cerrar sesión
+            </button>
           </div>
-        </nav>
-      )}
+        </div>
+      </nav>
 
-      {showNav && isAuthenticated && <TopBar />}
+      <TopBar />
 
       <div className="app-layout">
-        {showNav && isAuthenticated && <Sidebar />}
-        <div className={showNav ? "main-content" : ""}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* MESAS - ADMIN, MESERO */}
-          <Route path="/mesas" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
-              <MesasPage />
-            </ProtectedRoute>
-          } />
-
-          {/* FLOORPLAN - ADMIN, MESERO */}
-          <Route path="/floorplan" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
-              <FloorplanPage />
-            </ProtectedRoute>
-          } />
-
-          {/* PRODUCTOS - ADMIN only */}
-          <Route path="/productos" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <ProductosPage />
-            </ProtectedRoute>
-          } />
-
-          {/* PEDIDOS - ADMIN, MESERO */}
-          <Route path="/pedidos" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
-              <PedidosPage />
-            </ProtectedRoute>
-          } />
-
-          {/* COCINA - ADMIN, MESERO, COCINA */}
-          <Route path="/cocina" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO', 'COCINA']}>
-              <CocinaPage />
-            </ProtectedRoute>
-          } />
-
-          {/* FACTURAS - ADMIN, CAJA */}
-          <Route path="/facturas" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CAJA']}>
-              <FacturasPage />
-            </ProtectedRoute>
-          } />
-
-          {/* INVENTARIO - ADMIN, INVENTARIO */}
-          <Route path="/inventario" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'INVENTARIO']}>
-              <InventarioPage />
-            </ProtectedRoute>
-          } />
-
-          {/* RESERVAS - ADMIN, MESERO */}
-          <Route path="/reservas" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
-              <ReservasPage />
-            </ProtectedRoute>
-          } />
-
-          {/* REPORTES - ADMIN, GERENCIA */}
-          <Route path="/reportes" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'GERENCIA']}>
-              <ReportesPage />
-            </ProtectedRoute>
-          } />
-
-          {/* CIERRE CAJA - ADMIN, CAJA */}
-          <Route path="/cierre-caja" element={
-            <ProtectedRoute allowedRoles={['ADMIN', 'CAJA']}>
-              <CierreCajaPage />
-            </ProtectedRoute>
-          } />
-
-          {/* STAFF - ADMIN only */}
-          <Route path="/staff" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <StaffPage />
-            </ProtectedRoute>
-          } />
-        </Routes>
+        <Sidebar />
+        <div className="main-content">
+          {children}
         </div>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      {/* Login page - no layout wrapper */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* All other routes use authenticated layout */}
+      <Route path="/" element={
+        <AuthenticatedLayout>
+          <HomePage />
+        </AuthenticatedLayout>
+      } />
+
+      {/* MESAS - ADMIN, MESERO */}
+      <Route path="/mesas" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
+            <MesasPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* FLOORPLAN - ADMIN, MESERO */}
+      <Route path="/floorplan" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
+            <FloorplanPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* PRODUCTOS - ADMIN only */}
+      <Route path="/productos" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProductosPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* PEDIDOS - ADMIN, MESERO */}
+      <Route path="/pedidos" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
+            <PedidosPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* COCINA - ADMIN, MESERO, COCINA */}
+      <Route path="/cocina" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MESERO', 'COCINA']}>
+            <CocinaPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* FACTURAS - ADMIN, CAJA */}
+      <Route path="/facturas" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'CAJA']}>
+            <FacturasPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* INVENTARIO - ADMIN, INVENTARIO */}
+      <Route path="/inventario" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'INVENTARIO']}>
+            <InventarioPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* RESERVAS - ADMIN, MESERO */}
+      <Route path="/reservas" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MESERO']}>
+            <ReservasPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* REPORTES - ADMIN, GERENCIA */}
+      <Route path="/reportes" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'GERENCIA']}>
+            <ReportesPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* CIERRE CAJA - ADMIN, CAJA */}
+      <Route path="/cierre-caja" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN', 'CAJA']}>
+            <CierreCajaPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+
+      {/* STAFF - ADMIN only */}
+      <Route path="/staff" element={
+        <AuthenticatedLayout>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <StaffPage />
+          </ProtectedRoute>
+        </AuthenticatedLayout>
+      } />
+    </Routes>
   )
 }
 
