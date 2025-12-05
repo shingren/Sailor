@@ -870,47 +870,65 @@ function InventarioPage() {
                           ) : (
                             editRecetaData.extras.map((extra, index) => (
                               <div key={index} style={{ marginBottom: '10px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
-                                <input
-                                  type="text"
-                                  value={extra.nombre}
-                                  onChange={(e) => updateEditRecetaExtra(index, 'nombre', e.target.value)}
-                                  placeholder="Nombre"
-                                  required
-                                  style={{ width: '150px', marginRight: '10px' }}
-                                />
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={extra.precio}
-                                  onChange={(e) => updateEditRecetaExtra(index, 'precio', e.target.value)}
-                                  placeholder="Precio"
-                                  required
-                                  style={{ width: '80px', marginRight: '10px' }}
-                                />
-                                <select
-                                  value={extra.insumoId}
-                                  onChange={(e) => updateEditRecetaExtra(index, 'insumoId', e.target.value)}
-                                  required
-                                  style={{ marginRight: '10px' }}
-                                >
-                                  <option value="">-- Insumo --</option>
-                                  {insumos.map(insumo => (
-                                    <option key={insumo.id} value={insumo.id}>
-                                      {insumo.nombre}
-                                    </option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={extra.cantidadInsumo}
-                                  onChange={(e) => updateEditRecetaExtra(index, 'cantidadInsumo', e.target.value)}
-                                  placeholder="Cantidad"
-                                  required
-                                  style={{ width: '80px', marginRight: '10px' }}
-                                />
+                                <div style={{ marginBottom: '8px' }}>
+                                  <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '3px', fontWeight: '500' }}>
+                                    Nombre del Extra:
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={extra.nombre}
+                                    onChange={(e) => updateEditRecetaExtra(index, 'nombre', e.target.value)}
+                                    placeholder="Ej: Queso extra"
+                                    required
+                                    style={{ width: '200px' }}
+                                  />
+                                </div>
+                                <div style={{ marginBottom: '8px' }}>
+                                  <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '3px', fontWeight: '500' }}>
+                                    Precio ($):
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={extra.precio}
+                                    onChange={(e) => updateEditRecetaExtra(index, 'precio', e.target.value)}
+                                    required
+                                    style={{ width: '100px' }}
+                                  />
+                                </div>
+                                <div style={{ marginBottom: '8px' }}>
+                                  <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '3px', fontWeight: '500' }}>
+                                    Insumo Asociado:
+                                  </label>
+                                  <select
+                                    value={extra.insumoId}
+                                    onChange={(e) => updateEditRecetaExtra(index, 'insumoId', e.target.value)}
+                                    required
+                                    style={{ width: '200px' }}
+                                  >
+                                    <option value="">-- Seleccionar Insumo --</option>
+                                    {insumos.map(insumo => (
+                                      <option key={insumo.id} value={insumo.id}>
+                                        {insumo.nombre} ({insumo.unidad})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div style={{ marginBottom: '8px' }}>
+                                  <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '3px', fontWeight: '500' }}>
+                                    Cantidad del Insumo:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={extra.cantidadInsumo}
+                                    onChange={(e) => updateEditRecetaExtra(index, 'cantidadInsumo', e.target.value)}
+                                    required
+                                    style={{ width: '100px' }}
+                                  />
+                                </div>
                                 <button type="button" onClick={() => removeEditRecetaExtra(index)} className="btn-danger btn-small">
-                                  Eliminar
+                                  Eliminar Extra
                                 </button>
                               </div>
                             ))
