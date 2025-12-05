@@ -85,6 +85,25 @@ function ProductosPage() {
     })
   }
 
+  const handleToggleActive = async (productoId) => {
+    try {
+      const response = await fetch(`/api/productos/${productoId}/toggle-active`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': getAuthHeader()
+        }
+      })
+
+      if (response.ok) {
+        fetchProductos()
+      } else {
+        setError('Error al cambiar estado del producto')
+      }
+    } catch (err) {
+      setError('Error al cambiar estado del producto: ' + err.message)
+    }
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="centered-container">
@@ -148,18 +167,6 @@ function ProductosPage() {
               required
             />
           </div>
-          <div>
-            <label htmlFor="activo">
-              Activo:
-              <input
-                id="activo"
-                type="checkbox"
-                name="activo"
-                checked={formData.activo}
-                onChange={handleChange}
-              />
-            </label>
-          </div>
           <button type="submit" className="btn-primary">Crear Producto</button>
         </form>
         {createError && <div className="alert alert-error">{createError}</div>}
@@ -190,11 +197,13 @@ function ProductosPage() {
                   <td>{producto.categoria || '-'}</td>
                   <td>${producto.precio.toFixed(2)}</td>
                   <td>
-                    {producto.activo ? (
-                      <span className="badge badge-green">Activo</span>
-                    ) : (
-                      <span className="badge badge-gray">Inactivo</span>
-                    )}
+                    <button
+                      onClick={() => handleToggleActive(producto.id)}
+                      className={producto.activo ? 'btn-success btn-small' : 'btn-secondary btn-small'}
+                      title={producto.activo ? 'Desactivar producto' : 'Activar producto'}
+                    >
+                      {producto.activo ? '✓ Activo' : '✗ Inactivo'}
+                    </button>
                   </td>
                 </tr>
               ))}
