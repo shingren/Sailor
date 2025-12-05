@@ -29,4 +29,9 @@ public class RecetaController {
     public RecetaResponseDTO getRecetaByProducto(@PathVariable Long productoId) {
         return recetaService.getRecetaByProducto(productoId);
     }
+
+    @PutMapping("/{id}")
+    public RecetaResponseDTO updateReceta(@PathVariable Long id, @RequestBody RecetaCreateRequestDTO request) {
+        return recetaService.updateReceta(id, request.getItems(), request.getExtras());
+    }
 }

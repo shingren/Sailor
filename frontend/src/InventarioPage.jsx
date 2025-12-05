@@ -40,6 +40,13 @@ function InventarioPage() {
     stockMinimo: 0
   })
 
+  // Estado para edición de recetas
+  const [editingRecetaId, setEditingRecetaId] = useState(null)
+  const [editRecetaData, setEditRecetaData] = useState({
+    items: [],
+    extras: []
+  })
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchData()
@@ -271,6 +278,112 @@ function InventarioPage() {
     const updated = [...newReceta.extras]
     updated[index][field] = value
     setNewReceta({ ...newReceta, extras: updated })
+  }
+
+  // Funciones para editar recetas existentes
+  const handleStartEditReceta = (receta) => {
+    setEditingRecetaId(receta.id)
+    setEditRecetaData({
+      items: receta.items.map(item => ({
+        insumoId: item.insumoId,
+        cantidadNecesaria: item.cantidadNecesaria
+      })),
+      extras: receta.extras.map(extra => ({
+        nombre: extra.nombre,
+        precio: extra.precio,
+        insumoId: extra.insumoId,
+        cantidadInsumo: extra.cantidadInsumo
+      }))
+    })
+    setError('')
+  }
+
+  const handleCancelEditReceta = () => {
+    setEditingRecetaId(null)
+    setEditRecetaData({ items: [], extras: [] })
+  }
+
+  const handleSaveEditReceta = async (recetaId) => {
+    setError('')
+
+    if (editRecetaData.items.length === 0) {
+      setError('La receta debe tener al menos un ingrediente')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/recetas/${recetaId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthHeader()
+        },
+        body: JSON.stringify({
+          items: editRecetaData.items.map(item => ({
+            insumoId: parseInt(item.insumoId),
+            cantidadNecesaria: parseFloat(item.cantidadNecesaria)
+          })),
+          extras: editRecetaData.extras.map(extra => ({
+            nombre: extra.nombre,
+            precio: parseFloat(extra.precio),
+            insumoId: parseInt(extra.insumoId),
+            cantidadInsumo: parseFloat(extra.cantidadInsumo)
+          }))
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        setError('Error al actualizar receta: ' + errorText)
+        return
+      }
+
+      setEditingRecetaId(null)
+      setEditRecetaData({ items: [], extras: [] })
+      fetchData()
+    } catch (err) {
+      setError('Error al actualizar receta: ' + err.message)
+    }
+  }
+
+  const addEditRecetaItem = () => {
+    setEditRecetaData({
+      ...editRecetaData,
+      items: [...editRecetaData.items, { insumoId: '', cantidadNecesaria: 0 }]
+    })
+  }
+
+  const removeEditRecetaItem = (index) => {
+    setEditRecetaData({
+      ...editRecetaData,
+      items: editRecetaData.items.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateEditRecetaItem = (index, field, value) => {
+    const updated = [...editRecetaData.items]
+    updated[index][field] = value
+    setEditRecetaData({ ...editRecetaData, items: updated })
+  }
+
+  const addEditRecetaExtra = () => {
+    setEditRecetaData({
+      ...editRecetaData,
+      extras: [...editRecetaData.extras, { nombre: '', precio: 0, insumoId: '', cantidadInsumo: 0 }]
+    })
+  }
+
+  const removeEditRecetaExtra = (index) => {
+    setEditRecetaData({
+      ...editRecetaData,
+      extras: editRecetaData.extras.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateEditRecetaExtra = (index, field, value) => {
+    const updated = [...editRecetaData.extras]
+    updated[index][field] = value
+    setEditRecetaData({ ...editRecetaData, extras: updated })
   }
 
   if (!isAuthenticated) {
@@ -684,43 +797,171 @@ function InventarioPage() {
               <th>Producto</th>
               <th>Ingredientes</th>
               <th>Extras</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {recetas.length === 0 ? (
               <tr>
-                <td colSpan="4">No se encontraron recetas</td>
+                <td colSpan="5">No se encontraron recetas</td>
               </tr>
             ) : (
-              recetas.map(receta => (
-                <tr key={receta.id}>
-                  <td>{receta.id}</td>
-                  <td>{receta.productoNombre}</td>
-                  <td>
-                    <ul style={{ margin: '0', paddingLeft: '20px' }}>
-                      {receta.items.map((item, idx) => (
-                        <li key={idx}>
-                          {item.insumoNombre}: {item.cantidadNecesaria}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td>
-                    {receta.extras && receta.extras.length > 0 ? (
-                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
-                        {receta.extras.map((extra, idx) => (
-                          <li key={idx}>
-                            <strong>{extra.nombre}</strong> - ${extra.precio.toFixed(2)}<br/>
-                            <small>({extra.insumoNombre}: {extra.cantidadInsumo})</small>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span style={{ color: '#999' }}>Sin extras</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              recetas.map(receta => {
+                const isEditing = editingRecetaId === receta.id
+
+                return (
+                  <tr key={receta.id}>
+                    <td>{receta.id}</td>
+                    <td>{receta.productoNombre}</td>
+                    <td>
+                      {isEditing ? (
+                        <div style={{ padding: '10px' }}>
+                          <h5 style={{ marginTop: '0' }}>Ingredientes:</h5>
+                          {editRecetaData.items.map((item, index) => (
+                            <div key={index} style={{ marginBottom: '10px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f5f5f5' }}>
+                              <select
+                                value={item.insumoId}
+                                onChange={(e) => updateEditRecetaItem(index, 'insumoId', e.target.value)}
+                                required
+                                style={{ marginRight: '10px' }}
+                              >
+                                <option value="">-- Seleccionar Insumo --</option>
+                                {insumos.map(insumo => (
+                                  <option key={insumo.id} value={insumo.id}>
+                                    {insumo.nombre} ({insumo.unidad})
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.cantidadNecesaria}
+                                onChange={(e) => updateEditRecetaItem(index, 'cantidadNecesaria', e.target.value)}
+                                required
+                                style={{ width: '100px', marginRight: '10px' }}
+                              />
+                              {editRecetaData.items.length > 1 && (
+                                <button type="button" onClick={() => removeEditRecetaItem(index)} className="btn-danger btn-small">
+                                  Eliminar
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          <button type="button" onClick={addEditRecetaItem} className="btn-secondary btn-small" style={{ marginTop: '5px' }}>
+                            Agregar Ingrediente
+                          </button>
+                        </div>
+                      ) : (
+                        <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                          {receta.items.map((item, idx) => (
+                            <li key={idx}>
+                              {item.insumoNombre}: {item.cantidadNecesaria}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                    <td>
+                      {isEditing ? (
+                        <div style={{ padding: '10px' }}>
+                          <h5 style={{ marginTop: '0' }}>Extras:</h5>
+                          {editRecetaData.extras.length === 0 ? (
+                            <p style={{ color: '#999', fontSize: '0.9em' }}>Sin extras</p>
+                          ) : (
+                            editRecetaData.extras.map((extra, index) => (
+                              <div key={index} style={{ marginBottom: '10px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+                                <input
+                                  type="text"
+                                  value={extra.nombre}
+                                  onChange={(e) => updateEditRecetaExtra(index, 'nombre', e.target.value)}
+                                  placeholder="Nombre"
+                                  required
+                                  style={{ width: '150px', marginRight: '10px' }}
+                                />
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={extra.precio}
+                                  onChange={(e) => updateEditRecetaExtra(index, 'precio', e.target.value)}
+                                  placeholder="Precio"
+                                  required
+                                  style={{ width: '80px', marginRight: '10px' }}
+                                />
+                                <select
+                                  value={extra.insumoId}
+                                  onChange={(e) => updateEditRecetaExtra(index, 'insumoId', e.target.value)}
+                                  required
+                                  style={{ marginRight: '10px' }}
+                                >
+                                  <option value="">-- Insumo --</option>
+                                  {insumos.map(insumo => (
+                                    <option key={insumo.id} value={insumo.id}>
+                                      {insumo.nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={extra.cantidadInsumo}
+                                  onChange={(e) => updateEditRecetaExtra(index, 'cantidadInsumo', e.target.value)}
+                                  placeholder="Cantidad"
+                                  required
+                                  style={{ width: '80px', marginRight: '10px' }}
+                                />
+                                <button type="button" onClick={() => removeEditRecetaExtra(index)} className="btn-danger btn-small">
+                                  Eliminar
+                                </button>
+                              </div>
+                            ))
+                          )}
+                          <button type="button" onClick={addEditRecetaExtra} className="btn-secondary btn-small" style={{ marginTop: '5px' }}>
+                            Agregar Extra
+                          </button>
+                        </div>
+                      ) : (
+                        receta.extras && receta.extras.length > 0 ? (
+                          <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                            {receta.extras.map((extra, idx) => (
+                              <li key={idx}>
+                                <strong>{extra.nombre}</strong> - ${extra.precio.toFixed(2)}<br/>
+                                <small>({extra.insumoNombre}: {extra.cantidadInsumo})</small>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span style={{ color: '#999' }}>Sin extras</span>
+                        )
+                      )}
+                    </td>
+                    <td>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
+                          <button
+                            onClick={() => handleSaveEditReceta(receta.id)}
+                            className="btn-success btn-small"
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            onClick={handleCancelEditReceta}
+                            className="btn-secondary btn-small"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleStartEditReceta(receta)}
+                          className="btn-primary btn-small"
+                        >
+                          Editar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
