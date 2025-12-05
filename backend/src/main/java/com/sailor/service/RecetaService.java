@@ -1,10 +1,12 @@
 package com.sailor.service;
 
+import com.sailor.dto.RecetaExtraDTO;
 import com.sailor.dto.RecetaItemDTO;
 import com.sailor.dto.RecetaResponseDTO;
 import com.sailor.entity.Insumo;
 import com.sailor.entity.Producto;
 import com.sailor.entity.Receta;
+import com.sailor.entity.RecetaExtra;
 import com.sailor.entity.RecetaItem;
 import com.sailor.repository.InsumoRepository;
 import com.sailor.repository.ProductoRepository;
@@ -29,13 +31,14 @@ public class RecetaService {
     private InsumoRepository insumoRepository;
 
     @Transactional
-    public RecetaResponseDTO createReceta(Long productoId, List<RecetaItemDTO> items) {
+    public RecetaResponseDTO createReceta(Long productoId, List<RecetaItemDTO> items, List<RecetaExtraDTO> extras) {
         Producto producto = productoRepository.findById(productoId)
                 .orElseThrow(() -> new RuntimeException("Producto not found with id: " + productoId));
 
         Receta receta = new Receta();
         receta.setProducto(producto);
 
+        // Add recipe items
         for (RecetaItemDTO itemDTO : items) {
             Insumo insumo = insumoRepository.findById(itemDTO.getInsumoId())
                     .orElseThrow(() -> new RuntimeException("Insumo not found with id: " + itemDTO.getInsumoId()));
@@ -46,6 +49,23 @@ public class RecetaService {
             recetaItem.setCantidadNecesaria(itemDTO.getCantidadNecesaria());
 
             receta.getItems().add(recetaItem);
+        }
+
+        // Add extras if provided
+        if (extras != null && !extras.isEmpty()) {
+            for (RecetaExtraDTO extraDTO : extras) {
+                Insumo insumo = insumoRepository.findById(extraDTO.getInsumoId())
+                        .orElseThrow(() -> new RuntimeException("Insumo not found with id: " + extraDTO.getInsumoId()));
+
+                RecetaExtra recetaExtra = new RecetaExtra();
+                recetaExtra.setReceta(receta);
+                recetaExtra.setNombre(extraDTO.getNombre());
+                recetaExtra.setPrecio(extraDTO.getPrecio());
+                recetaExtra.setInsumo(insumo);
+                recetaExtra.setCantidadInsumo(extraDTO.getCantidadInsumo());
+
+                receta.getExtras().add(recetaExtra);
+            }
         }
 
         Receta saved = recetaRepository.save(receta);
@@ -75,6 +95,11 @@ public class RecetaService {
                 .collect(Collectors.toList());
         dto.setItems(itemDTOs);
 
+        List<RecetaExtraDTO> extraDTOs = receta.getExtras().stream()
+                .map(this::mapExtraToDTO)
+                .collect(Collectors.toList());
+        dto.setExtras(extraDTOs);
+
         return dto;
     }
 
@@ -83,6 +108,17 @@ public class RecetaService {
         dto.setInsumoId(item.getInsumo().getId());
         dto.setInsumoNombre(item.getInsumo().getNombre());
         dto.setCantidadNecesaria(item.getCantidadNecesaria());
+        return dto;
+    }
+
+    private RecetaExtraDTO mapExtraToDTO(RecetaExtra extra) {
+        RecetaExtraDTO dto = new RecetaExtraDTO();
+        dto.setId(extra.getId());
+        dto.setNombre(extra.getNombre());
+        dto.setPrecio(extra.getPrecio());
+        dto.setInsumoId(extra.getInsumo().getId());
+        dto.setInsumoNombre(extra.getInsumo().getNombre());
+        dto.setCantidadInsumo(extra.getCantidadInsumo());
         return dto;
     }
 }

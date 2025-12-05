@@ -5,6 +5,7 @@ import java.util.List;
 public class RecetaCreateRequestDTO {
     private Long productoId;
     private List<RecetaItemDTO> items;
+    private List<RecetaExtraDTO> extras;
 
     public RecetaCreateRequestDTO() {
     }
@@ -23,5 +24,13 @@ public class RecetaCreateRequestDTO {
 
     public void setItems(List<RecetaItemDTO> items) {
         this.items = items;
+    }
+
+    public List<RecetaExtraDTO> getExtras() {
+        return extras;
+    }
+
+    public void setExtras(List<RecetaExtraDTO> extras) {
+        this.extras = extras;
     }
 }

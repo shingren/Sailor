@@ -28,7 +28,8 @@ function InventarioPage() {
 
   const [newReceta, setNewReceta] = useState({
     productoId: '',
-    items: [{ insumoId: '', cantidadNecesaria: 0 }]
+    items: [{ insumoId: '', cantidadNecesaria: 0 }],
+    extras: []
   })
 
   // Estado para edición de insumos
@@ -209,6 +210,12 @@ function InventarioPage() {
           items: newReceta.items.map(item => ({
             insumoId: parseInt(item.insumoId),
             cantidadNecesaria: parseFloat(item.cantidadNecesaria)
+          })),
+          extras: newReceta.extras.map(extra => ({
+            nombre: extra.nombre,
+            precio: parseFloat(extra.precio),
+            insumoId: parseInt(extra.insumoId),
+            cantidadInsumo: parseFloat(extra.cantidadInsumo)
           }))
         })
       })
@@ -219,7 +226,7 @@ function InventarioPage() {
         return
       }
 
-      setNewReceta({ productoId: '', items: [{ insumoId: '', cantidadNecesaria: 0 }] })
+      setNewReceta({ productoId: '', items: [{ insumoId: '', cantidadNecesaria: 0 }], extras: [] })
       fetchData()
     } catch (err) {
       setError('Error al crear receta: ' + err.message)
@@ -244,6 +251,26 @@ function InventarioPage() {
     const updated = [...newReceta.items]
     updated[index][field] = value
     setNewReceta({ ...newReceta, items: updated })
+  }
+
+  const addRecetaExtra = () => {
+    setNewReceta({
+      ...newReceta,
+      extras: [...newReceta.extras, { nombre: '', precio: 0, insumoId: '', cantidadInsumo: 0 }]
+    })
+  }
+
+  const removeRecetaExtra = (index) => {
+    setNewReceta({
+      ...newReceta,
+      extras: newReceta.extras.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateRecetaExtra = (index, field, value) => {
+    const updated = [...newReceta.extras]
+    updated[index][field] = value
+    setNewReceta({ ...newReceta, extras: updated })
   }
 
   if (!isAuthenticated) {
@@ -579,6 +606,72 @@ function InventarioPage() {
           ))}
 
           <button type="button" onClick={addRecetaItem} className="btn-secondary">Agregar Ingrediente</button>
+
+          <h4 style={{ marginTop: '20px' }}>Extras (Opcional):</h4>
+          {newReceta.extras.map((extra, index) => (
+            <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+              <label htmlFor={`extra-nombre-${index}`}>
+                Nombre del Extra:
+              </label>
+              <input
+                id={`extra-nombre-${index}`}
+                type="text"
+                value={extra.nombre}
+                onChange={(e) => updateRecetaExtra(index, 'nombre', e.target.value)}
+                placeholder="Ej: Queso extra, Shot extra"
+                required
+                style={{ width: '200px', marginRight: '10px' }}
+              />
+
+              <label htmlFor={`extra-precio-${index}`}>
+                Precio:
+              </label>
+              <input
+                id={`extra-precio-${index}`}
+                type="number"
+                step="0.01"
+                value={extra.precio}
+                onChange={(e) => updateRecetaExtra(index, 'precio', e.target.value)}
+                required
+                style={{ width: '100px', marginRight: '10px' }}
+              />
+
+              <label htmlFor={`extra-insumo-${index}`}>
+                Insumo:
+              </label>
+              <select
+                id={`extra-insumo-${index}`}
+                value={extra.insumoId}
+                onChange={(e) => updateRecetaExtra(index, 'insumoId', e.target.value)}
+                required
+                style={{ marginRight: '10px' }}
+              >
+                <option value="">-- Seleccionar Insumo --</option>
+                {insumos.map(insumo => (
+                  <option key={insumo.id} value={insumo.id}>
+                    {insumo.nombre} ({insumo.unidad})
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor={`extra-cantidad-${index}`}>
+                Cantidad del Insumo:
+              </label>
+              <input
+                id={`extra-cantidad-${index}`}
+                type="number"
+                step="0.01"
+                value={extra.cantidadInsumo}
+                onChange={(e) => updateRecetaExtra(index, 'cantidadInsumo', e.target.value)}
+                required
+                style={{ width: '100px', marginRight: '10px' }}
+              />
+
+              <button type="button" onClick={() => removeRecetaExtra(index)} className="btn-danger btn-small">Eliminar Extra</button>
+            </div>
+          ))}
+
+          <button type="button" onClick={addRecetaExtra} className="btn-secondary">Agregar Extra</button>
           {' '}
           <button type="submit" className="btn-primary">Crear Receta</button>
         </form>
@@ -590,12 +683,13 @@ function InventarioPage() {
               <th>ID</th>
               <th>Producto</th>
               <th>Ingredientes</th>
+              <th>Extras</th>
             </tr>
           </thead>
           <tbody>
             {recetas.length === 0 ? (
               <tr>
-                <td colSpan="3">No se encontraron recetas</td>
+                <td colSpan="4">No se encontraron recetas</td>
               </tr>
             ) : (
               recetas.map(receta => (
@@ -610,6 +704,20 @@ function InventarioPage() {
                         </li>
                       ))}
                     </ul>
+                  </td>
+                  <td>
+                    {receta.extras && receta.extras.length > 0 ? (
+                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                        {receta.extras.map((extra, idx) => (
+                          <li key={idx}>
+                            <strong>{extra.nombre}</strong> - ${extra.precio.toFixed(2)}<br/>
+                            <small>({extra.insumoNombre}: {extra.cantidadInsumo})</small>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span style={{ color: '#999' }}>Sin extras</span>
+                    )}
                   </td>
                 </tr>
               ))

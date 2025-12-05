@@ -19,6 +19,9 @@ public class Receta {
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecetaItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecetaExtra> extras = new ArrayList<>();
+
     public Receta() {
     }
 
@@ -44,5 +47,13 @@ public class Receta {
 
     public void setItems(List<RecetaItem> items) {
         this.items = items;
+    }
+
+    public List<RecetaExtra> getExtras() {
+        return extras;
+    }
+
+    public void setExtras(List<RecetaExtra> extras) {
+        this.extras = extras;
     }
 }

@@ -17,7 +17,7 @@ public class RecetaController {
 
     @PostMapping
     public RecetaResponseDTO createReceta(@RequestBody RecetaCreateRequestDTO request) {
-        return recetaService.createReceta(request.getProductoId(), request.getItems());
+        return recetaService.createReceta(request.getProductoId(), request.getItems(), request.getExtras());
     }
 
     @GetMapping

@@ -7,6 +7,7 @@ public class RecetaResponseDTO {
     private Long productoId;
     private String productoNombre;
     private List<RecetaItemDTO> items;
+    private List<RecetaExtraDTO> extras;
 
     public RecetaResponseDTO() {
     }
@@ -41,5 +42,13 @@ public class RecetaResponseDTO {
 
     public void setItems(List<RecetaItemDTO> items) {
         this.items = items;
+    }
+
+    public List<RecetaExtraDTO> getExtras() {
+        return extras;
+    }
+
+    public void setExtras(List<RecetaExtraDTO> extras) {
+        this.extras = extras;
     }
 }
