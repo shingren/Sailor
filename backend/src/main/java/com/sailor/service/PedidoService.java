@@ -104,6 +104,7 @@ public class PedidoService {
     public List<PedidoResponseDTO> getPedidosListosParaFacturar() {
         return pedidoRepository.findAll().stream()
                 .filter(pedido -> pedido.getEstado().equals("ENTREGADO"))
+                .filter(pedido -> pedido.getFactura() == null)
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }

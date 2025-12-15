@@ -65,7 +65,9 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
   - Has `estado` field (enum: PENDIENTE → PREPARACION → LISTO → ENTREGADO → PAGADO)
   - State transitions are validated (see PedidoEstado enum)
   - PAGADO orders do not appear in "Pedidos Activos"
-  - Only ENTREGADO orders can generate facturas
+  - **Facturación**: ONLY pedidos with estado ENTREGADO can generate facturas (strictly enforced)
+    - Attempts to facturar pedidos in other states return HTTP 400 Bad Request with clear error message
+    - GET /pedidos/listos-facturar returns ENTREGADO pedidos WITHOUT existing factura
   - When factura is fully paid, pedido estado automatically changes to PAGADO
 - **PedidoItem**: Many-to-One with both Pedido and Producto, One-to-Many with PedidoItemExtra
   - Order creation is transactional and automatically sets `precioUnitario` from current product price

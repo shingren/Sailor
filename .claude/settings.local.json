@@ -13,7 +13,8 @@
       "Bash(pkill -f \"docker logs\")",
       "Bash(cat:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiJ9.eyJyb2wiOiJBRE1JTiIsInN1YiI6ImFkbWluQHNhaWxvci5jb20iLCJpYXQiOjE3NjU3NjMyOTYsImV4cCI6MTc2NTc2NDE5Nn0.vLkKfVWId85_mdHZy0QXqbK_1G4LIAkz6iRuTIHjmhw\")",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []

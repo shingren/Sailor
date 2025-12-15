@@ -90,6 +90,12 @@ function FacturasPage() {
         return
       }
 
+      if (response.status === 400) {
+        const errorData = await response.json()
+        setError(errorData.error || 'Estado de pedido inválido para facturación')
+        return
+      }
+
       if (response.status === 409) {
         const errorData = await response.json()
         setError(errorData.error || 'Ya existe una factura para este pedido')
