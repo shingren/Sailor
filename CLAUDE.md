@@ -10,10 +10,10 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
 
 ### Backend (Spring Boot 3.3.0 + Java 21)
 - **Package structure**: `com.sailor.*`
-  - `entity`: JPA entities (Mesa, Producto, Pedido, PedidoItem, PedidoEstado, Usuario, Factura, Pago, Insumo, Receta, RecetaItem, MovimientoInsumo, Reserva, CierreCaja)
+  - `entity`: JPA entities (Mesa, Producto, Pedido, PedidoItem, PedidoItemExtra, PedidoEstado, Usuario, Factura, Pago, Insumo, Receta, RecetaItem, RecetaExtra, MovimientoInsumo, Reserva, CierreCaja, Location)
   - `repository`: Spring Data JPA repositories
-  - `service`: Business logic (PedidoService, FacturaService, InsumoService, RecetaService, ReservaService, CierreCajaService, UsuarioService, JwtUtil, CustomUserDetailsService)
-  - `controller`: REST controllers (MesaController, ProductoController, PedidoController, FacturaController, PagoController, InsumoController, RecetaController, ReservaController, ReporteController, CierreCajaController, UsuarioController, AuthController, HealthController)
+  - `service`: Business logic (PedidoService, FacturaService, InsumoService, RecetaService, ReservaService, CierreCajaService, UsuarioService, DashboardService, JwtUtil, CustomUserDetailsService)
+  - `controller`: REST controllers (MesaController, ProductoController, PedidoController, FacturaController, PagoController, InsumoController, RecetaController, ReservaController, ReporteController, DashboardController, CierreCajaController, UsuarioController, LocationController, AuthController, HealthController)
   - `dto`: Data transfer objects for request/response mapping
   - `config`: Security, CORS, JWT filter, data initialization, exception handling
 - **Database**: MySQL 8 with Hibernate (ddl-auto: update)
@@ -36,9 +36,14 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
   - AuthContext provides: `email`, `rol`, `isAuthenticated`, `login()`, `logout()`, `getAuthHeader()`, `hasRole()`
   - Access and refresh tokens persisted in localStorage
   - Token refresh is automatic when access token expires
-- **Pages**: HomePage, LoginPage, MesasPage, ProductosPage, PedidosPage, FacturasPage, InventarioPage, ReservasPage, CocinaPage, ReportesPage, StaffPage, CierreCajaPage
+- **Components**: TopBar (navigation header), Sidebar (collapsible menu), NotAuthorized (403 page)
+- **Pages**: HomePage, LoginPage, MesasPage, FloorplanPage, ProductosPage, PedidosPage, FacturasPage, InventarioPage, ReservasPage, CocinaPage, ReportesPage, StaffPage, CierreCajaPage
   - All pages follow consistent patterns: loading states, error handling, and authentication checks
   - Spanish language UI throughout the application
+- **FloorplanPage**: Interactive canvas-based floor plan for visual table management
+  - Drag-and-drop table positioning with location filtering
+  - Pan and zoom controls for large floor plans
+  - Real-time table status visualization (available, occupied, reserved)
 - **API calls**: Use relative `/api/...` paths with `getAuthHeader()` for Bearer token authorization
 - **Role-based UI**: Use `hasRole(roleName)` to conditionally render UI elements based on user role
 
@@ -51,7 +56,9 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
 - **WebSocket support**: Enabled for Vite HMR
 
 ### Domain Model Relationships
-- **Mesa**: Standalone table entity
+- **Mesa**: Standalone table entity with optional Many-to-One relationship to Location
+  - Can have x, y coordinates for FloorplanPage visual positioning
+- **Location**: Standalone entity for organizing tables into areas/zones (e.g., "Patio", "Interior", "Bar")
 - **Usuario**: User entity with `rol` field (ADMIN, MESERO, COCINA, CAJA, INVENTARIO, GERENCIA)
 - **Producto**: Standalone product catalog
 - **Pedido**: One-to-Many with PedidoItem, Many-to-One with Mesa
@@ -60,16 +67,22 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
   - PAGADO orders do not appear in "Pedidos Activos"
   - Only ENTREGADO orders can generate facturas
   - When factura is fully paid, pedido estado automatically changes to PAGADO
-- **PedidoItem**: Many-to-One with both Pedido and Producto
+- **PedidoItem**: Many-to-One with both Pedido and Producto, One-to-Many with PedidoItemExtra
   - Order creation is transactional and automatically sets `precioUnitario` from current product price
+- **PedidoItemExtra**: Many-to-One with both PedidoItem and RecetaExtra
+  - Tracks extras/add-ons selected for a specific order item
+  - Stores quantity and price at time of order
 - **Factura** (Invoice): Many-to-One with Pedido, One-to-Many with Pago
 - **Pago** (Payment): Many-to-One with Factura, has `metodoPago` field (EFECTIVO, TARJETA)
 - **Insumo** (Ingredient): Standalone ingredient/supply entity with stock tracking
   - Fields: nombre, unidad, stockActual, stockMinimo
   - Stock is modified only through MovimientoInsumo, not directly
   - Supports editing via PUT endpoint (nombre, unidad, stockMinimo only)
-- **Receta** (Recipe): One-to-Many with RecetaItem, Many-to-One with Producto
-- **RecetaItem**: Many-to-One with both Receta and Insumo
+- **Receta** (Recipe): One-to-Many with RecetaItem and RecetaExtra, Many-to-One with Producto
+- **RecetaItem**: Many-to-One with both Receta and Insumo (defines base ingredients for a product)
+- **RecetaExtra**: Many-to-One with both Receta and Insumo (defines optional add-ons/extras for a product)
+  - Each extra has a name, price, and ingredient cost (cantidadInsumo)
+  - Examples: extra cheese, bacon, guacamole
 - **MovimientoInsumo** (Inventory Movement): Many-to-One with Insumo, tracks stock changes
   - Types: COMPRA (purchase, positive), AJUSTE (adjustment, can be +/-), CONSUMO (consumption, negative)
   - Automatically updates Insumo.stockActual on creation
@@ -180,8 +193,13 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 #### Tables (ADMIN, MESERO)
 - `GET /mesas` - List all tables
 - `POST /mesas` - Create table
-- `PUT /mesas/{id}` - Update table
+- `PUT /mesas/{id}` - Update table (including x, y coordinates for floorplan)
 - `DELETE /mesas/{id}` - Delete table
+
+#### Locations (ADMIN, MESERO)
+- `GET /locations` - List all locations/zones
+- `POST /locations` - Create location
+- `DELETE /locations/{id}` - Delete location
 
 #### Products (ADMIN only)
 - `GET /productos` - List all products
@@ -193,8 +211,9 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 - `GET /pedidos` - List all orders (ADMIN, MESERO)
 - `GET /pedidos/activos` - List active orders (ADMIN, MESERO, COCINA)
 - `GET /pedidos/{id}` - Get order by ID (ADMIN, MESERO)
-- `POST /pedidos` - Create order (ADMIN, MESERO) - requires `mesaId`, `items[]`, optional `observaciones`
+- `POST /pedidos` - Create order (ADMIN, MESERO) - requires `mesaId`, `items[]` (with optional `extras[]`), optional `observaciones`
 - `PATCH /pedidos/{id}/estado` - Update order status (ADMIN, MESERO, COCINA)
+- `GET /pedidos/listos-facturar` - Get orders ready for invoicing (estado: ENTREGADO)
 
 #### Invoices (ADMIN, CAJA)
 - `GET /facturas` - List all invoices
@@ -211,7 +230,8 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 - `GET /insumos/movimientos` - List inventory movements
 - `POST /insumos/movimientos` - Create movement (insumoId, cantidad, tipo: COMPRA/AJUSTE/CONSUMO, descripcion)
 - `GET /recetas` - List recipes
-- `POST /recetas` - Create recipe linking products to ingredients
+- `POST /recetas` - Create recipe linking products to ingredients (includes base items and optional extras)
+- `PUT /recetas/{id}` - Update recipe (including items and extras)
 
 #### Reservations (ADMIN, MESERO)
 - `GET /reservas` - List reservations
@@ -219,6 +239,9 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 
 #### Reports (ADMIN, GERENCIA)
 - `GET /reportes/*` - Various analytics and reports
+
+#### Dashboard (ADMIN, GERENCIA)
+- `GET /dashboard/*` - Dashboard metrics and statistics
 
 #### Cash Register Closure (ADMIN, CAJA)
 - `GET /cierre-caja` - List all cash register closures
@@ -270,6 +293,30 @@ When working with inventory:
   - `AJUSTE`: Stock adjustment (can be positive or negative)
   - `CONSUMO`: Usage/consumption (negative quantity, typically from recipe execution)
 - **Stock validation**: Movements that would result in negative stock are rejected
+
+### Recipe Extras/Add-ons Pattern
+The system supports optional extras (add-ons) for products:
+- **RecetaExtra**: Defines available extras for a product (e.g., "Extra Queso", "Tocino")
+  - Each extra has: name, price, associated insumo, and cantidadInsumo (ingredient cost)
+- **PedidoItemExtra**: Tracks which extras were selected when ordering
+  - Links to PedidoItem and RecetaExtra
+  - Stores quantity and price at time of order (price freezing)
+- **Creating orders with extras**: Include `extras` array in each item when POSTing to `/pedidos`
+  - Each extra should specify `recetaExtraId` and `cantidad`
+- **Inventory impact**: When creating orders, extras consume inventory through their associated insumos
+
+### Floorplan and Location Management
+The FloorplanPage provides a visual, interactive floor plan for managing tables:
+- **Canvas-based rendering**: Uses HTML5 Canvas for high-performance table visualization
+- **Drag-and-drop**: Tables can be repositioned by dragging on the canvas
+  - Table positions (x, y coordinates) are saved to the database via PUT /mesas/{id}
+- **Location filtering**: Filter tables by location/zone (e.g., show only "Patio" tables)
+- **Pan and zoom**: Navigate large floor plans with mouse drag (pan) and scroll wheel (zoom)
+- **Real-time status**: Tables display current status with color coding (available, occupied, reserved)
+- **Location entity**: Use the Location entity to organize tables into zones
+  - Create locations via POST /locations
+  - Assign tables to locations when creating/updating mesas
+- **Coordinate system**: Tables are positioned using pixel coordinates relative to canvas origin (top-left)
 
 ### Common Frontend Patterns
 All page components follow these conventions:
