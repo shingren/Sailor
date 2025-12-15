@@ -32,8 +32,9 @@ public class Factura {
     @Column(nullable = false)
     private double total;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String estado = "PENDIENTE";
+    private FacturaEstado estado = FacturaEstado.PENDIENTE;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Pago> pagos = new ArrayList<>();
@@ -98,11 +99,11 @@ public class Factura {
         this.total = total;
     }
 
-    public String getEstado() {
+    public FacturaEstado getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(FacturaEstado estado) {
         this.estado = estado;
     }
 

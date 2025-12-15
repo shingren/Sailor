@@ -3,6 +3,7 @@ package com.sailor.service;
 import com.sailor.dto.FacturaResponseDTO;
 import com.sailor.dto.PagoResponseDTO;
 import com.sailor.entity.Factura;
+import com.sailor.entity.FacturaEstado;
 import com.sailor.entity.Pago;
 import com.sailor.entity.Pedido;
 import com.sailor.entity.PedidoItem;
@@ -106,7 +107,7 @@ public class FacturaService {
                 .sum();
 
         if (totalPagado >= factura.getTotal()) {
-            factura.setEstado("PAGADA");
+            factura.setEstado(FacturaEstado.PAGADA);
 
             // Update pedido estado to PAGADO
             Pedido pedido = factura.getPedido();
@@ -127,7 +128,7 @@ public class FacturaService {
         dto.setImpuestos(factura.getImpuestos());
         dto.setDescuento(factura.getDescuento());
         dto.setTotal(factura.getTotal());
-        dto.setEstado(factura.getEstado());
+        dto.setEstado(factura.getEstado().name());
 
         List<PagoResponseDTO> pagos = factura.getPagos().stream()
                 .map(this::mapPagoToResponseDTO)

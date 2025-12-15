@@ -219,9 +219,9 @@ function FacturasPage() {
   // Calculate summary statistics
   const totalFacturas = facturas.length
   const facturasPendientes = facturas.filter(f => f.estado === 'PENDIENTE').length
-  const facturasPagadas = facturas.filter(f => f.estado === 'PAGADO' || f.estado === 'PAGADA').length
+  const facturasPagadas = facturas.filter(f => f.estado === 'PAGADA').length
   const montoTotalCobrado = facturas
-    .filter(f => f.estado === 'PAGADO' || f.estado === 'PAGADA')
+    .filter(f => f.estado === 'PAGADA')
     .reduce((sum, f) => sum + f.total, 0)
 
   const formatCurrency = (amount) => {
@@ -374,7 +374,7 @@ function FacturasPage() {
                     </div>
                     <span className={`badge ${
                       factura.estado === 'PENDIENTE' ? 'badge-yellow' :
-                      factura.estado === 'PAGADO' || factura.estado === 'PAGADA' ? 'badge-green' :
+                      factura.estado === 'PAGADA' ? 'badge-green' :
                       'badge-gray'
                     }`}>
                       {factura.estado}
