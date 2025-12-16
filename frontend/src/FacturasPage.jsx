@@ -171,6 +171,12 @@ function FacturasPage() {
         return
       }
 
+      if (response.status === 400) {
+        const errorData = await response.json()
+        setError(errorData.error || 'Error de validación al registrar pago')
+        return
+      }
+
       if (!response.ok) {
         const errorText = await response.text()
         setError('Error al registrar pago: ' + errorText)

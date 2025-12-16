@@ -9,6 +9,9 @@ import com.sailor.entity.Pedido;
 import com.sailor.entity.PedidoItem;
 import com.sailor.exception.FacturaAlreadyExistsException;
 import com.sailor.exception.InvalidPedidoEstadoException;
+import com.sailor.exception.PagoInvalidoException;
+import com.sailor.exception.FacturaYaPagadaException;
+import com.sailor.exception.MontoExcedeSaldoException;
 import com.sailor.repository.FacturaRepository;
 import com.sailor.repository.PagoRepository;
 import com.sailor.repository.PedidoRepository;
@@ -91,13 +94,33 @@ public class FacturaService {
 
     @Transactional
     public FacturaResponseDTO registrarPago(Long facturaId, double monto, String metodo) {
+        // Validación 1: Monto debe ser mayor a 0
         if (monto <= 0) {
-            throw new RuntimeException("Monto must be greater than 0");
+            throw new PagoInvalidoException("El monto debe ser mayor a 0");
         }
 
         Factura factura = facturaRepository.findById(facturaId)
-                .orElseThrow(() -> new RuntimeException("Factura not found with id: " + facturaId));
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + facturaId));
 
+        // Validación 2: Factura debe estar PENDIENTE (no se puede pagar una factura ya PAGADA)
+        if (factura.getEstado() == FacturaEstado.PAGADA) {
+            throw new FacturaYaPagadaException("No se pueden registrar pagos en una factura que ya está PAGADA");
+        }
+
+        // Validación 3: Monto no puede exceder saldo pendiente
+        double totalPagadoActual = factura.getPagos().stream()
+                .mapToDouble(Pago::getMonto)
+                .sum();
+        double saldoPendiente = factura.getTotal() - totalPagadoActual;
+
+        if (monto > saldoPendiente) {
+            throw new MontoExcedeSaldoException(
+                String.format("El monto ($%.2f) excede el saldo pendiente ($%.2f). No se permiten sobrepagos.",
+                    monto, saldoPendiente)
+            );
+        }
+
+        // Crear y persistir el pago
         Pago pago = new Pago();
         pago.setFactura(factura);
         pago.setMonto(monto);
@@ -106,6 +129,7 @@ public class FacturaService {
         Pago savedPago = pagoRepository.save(pago);
         factura.getPagos().add(savedPago);
 
+        // Recalcular total pagado y actualizar estado si está completamente pagado
         double totalPagado = factura.getPagos().stream()
                 .mapToDouble(Pago::getMonto)
                 .sum();
