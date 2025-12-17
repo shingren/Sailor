@@ -4,6 +4,7 @@ import com.sailor.dto.FacturaResponseDTO;
 import com.sailor.dto.PagoResponseDTO;
 import com.sailor.entity.Factura;
 import com.sailor.entity.FacturaEstado;
+import com.sailor.entity.Mesa;
 import com.sailor.entity.Pago;
 import com.sailor.entity.Pedido;
 import com.sailor.entity.PedidoItem;
@@ -13,6 +14,7 @@ import com.sailor.exception.PagoInvalidoException;
 import com.sailor.exception.FacturaYaPagadaException;
 import com.sailor.exception.MontoExcedeSaldoException;
 import com.sailor.repository.FacturaRepository;
+import com.sailor.repository.MesaRepository;
 import com.sailor.repository.PagoRepository;
 import com.sailor.repository.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,9 @@ public class FacturaService {
 
     @Autowired
     private PedidoRepository pedidoRepository;
+
+    @Autowired
+    private MesaRepository mesaRepository;
 
     @Autowired
     private UsuarioService usuarioService;
@@ -175,6 +180,14 @@ public class FacturaService {
             Pedido pedido = factura.getPedido();
             pedido.setEstado("PAGADO");
             pedidoRepository.save(pedido);
+
+            // Liberar mesa: marcar como disponible si está ocupada
+            Mesa mesa = pedido.getMesa();
+            if (mesa != null && "ocupada".equalsIgnoreCase(mesa.getEstado())) {
+                mesa.setEstado("disponible");
+                mesaRepository.save(mesa);
+            }
+            // Si está reservada, mantener (no romper reservas)
         }
 
         Factura savedFactura = facturaRepository.save(factura);

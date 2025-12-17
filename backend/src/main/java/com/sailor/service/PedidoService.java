@@ -45,6 +45,14 @@ public class PedidoService {
         Mesa mesa = mesaRepository.findById(request.getMesaId())
                 .orElseThrow(() -> new RuntimeException("Mesa not found with id: " + request.getMesaId()));
 
+        // Marcar mesa como ocupada al crear pedido (si está disponible)
+        if ("disponible".equalsIgnoreCase(mesa.getEstado())) {
+            mesa.setEstado("ocupada");
+            mesaRepository.save(mesa);
+        }
+        // Si está ocupada, mantener (permite múltiples pedidos en misma mesa)
+        // Si está reservada, no cambiar (respetar reserva)
+
         Pedido pedido = new Pedido();
         pedido.setMesa(mesa);
         pedido.setObservaciones(request.getObservaciones());
