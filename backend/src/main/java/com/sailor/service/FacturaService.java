@@ -1,7 +1,9 @@
 package com.sailor.service;
 
+import com.sailor.dto.FacturaCreateRequestDTO;
 import com.sailor.dto.FacturaResponseDTO;
 import com.sailor.dto.PagoResponseDTO;
+import com.sailor.entity.Cliente;
 import com.sailor.entity.Factura;
 import com.sailor.entity.FacturaEstado;
 import com.sailor.entity.Mesa;
@@ -13,6 +15,7 @@ import com.sailor.exception.InvalidPedidoEstadoException;
 import com.sailor.exception.PagoInvalidoException;
 import com.sailor.exception.FacturaYaPagadaException;
 import com.sailor.exception.MontoExcedeSaldoException;
+import com.sailor.repository.ClienteRepository;
 import com.sailor.repository.FacturaRepository;
 import com.sailor.repository.MesaRepository;
 import com.sailor.repository.PagoRepository;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,12 +46,15 @@ public class FacturaService {
     private MesaRepository mesaRepository;
 
     @Autowired
+    private ClienteRepository clienteRepository;
+
+    @Autowired
     private UsuarioService usuarioService;
 
     @Transactional
-    public FacturaResponseDTO crearFactura(Long pedidoId) {
-        Pedido pedido = pedidoRepository.findById(pedidoId)
-                .orElseThrow(() -> new RuntimeException("Pedido not found with id: " + pedidoId));
+    public FacturaResponseDTO crearFactura(FacturaCreateRequestDTO request) {
+        Pedido pedido = pedidoRepository.findById(request.getPedidoId())
+                .orElseThrow(() -> new RuntimeException("Pedido not found with id: " + request.getPedidoId()));
 
         // Validate that pedido is in ENTREGADO state (business rule)
         if (!pedido.getEstado().equals("ENTREGADO")) {
@@ -58,7 +65,7 @@ public class FacturaService {
 
         // Validate that factura doesn't already exist for this pedido (One-to-One relationship)
         if (facturaRepository.existsByPedido(pedido)) {
-            throw new FacturaAlreadyExistsException("Ya existe una factura para el pedido #" + pedidoId);
+            throw new FacturaAlreadyExistsException("Ya existe una factura para el pedido #" + request.getPedidoId());
         }
 
         double subtotal = pedido.getItems().stream()
@@ -95,13 +102,77 @@ public class FacturaService {
             System.err.println("Warning: No se pudo obtener usuario actual para trazabilidad: " + e.getMessage());
         }
 
+        // Handle cliente fiscal data and snapshot
+        if (request.isEsConsumidorFinal()) {
+            // Consumidor final: no cliente association, set snapshot to standard values
+            factura.setCliente(null);
+            factura.setClienteIdentificacionFiscal("CONSUMIDOR FINAL");
+            factura.setClienteNombre("Consumidor Final");
+            factura.setClienteDireccion(null);
+            factura.setClienteEmail(null);
+            factura.setClienteTelefono(null);
+        } else {
+            // Nominative factura: validate and handle cliente data
+            if (request.getClienteIdentificacionFiscal() == null || request.getClienteIdentificacionFiscal().trim().isEmpty()) {
+                throw new RuntimeException("Para factura nominativa, la identificación fiscal del cliente es obligatoria");
+            }
+            if (request.getClienteNombre() == null || request.getClienteNombre().trim().isEmpty()) {
+                throw new RuntimeException("Para factura nominativa, el nombre del cliente es obligatorio");
+            }
+
+            // Search for existing cliente by identificacion
+            Optional<Cliente> clienteExistenteOpt = clienteRepository.findByIdentificacionFiscal(
+                    request.getClienteIdentificacionFiscal());
+
+            Cliente clienteToAssociate = null;
+
+            if (clienteExistenteOpt.isPresent()) {
+                // Cliente exists: associate it to factura
+                clienteToAssociate = clienteExistenteOpt.get();
+                factura.setCliente(clienteToAssociate);
+
+                // Use existing cliente data to fill snapshot (prioritize request data if provided)
+                factura.setClienteIdentificacionFiscal(clienteToAssociate.getIdentificacionFiscal());
+                factura.setClienteNombre(
+                        request.getClienteNombre() != null ? request.getClienteNombre() : clienteToAssociate.getNombre());
+                factura.setClienteDireccion(
+                        request.getClienteDireccion() != null ? request.getClienteDireccion() : clienteToAssociate.getDireccion());
+                factura.setClienteEmail(
+                        request.getClienteEmail() != null ? request.getClienteEmail() : clienteToAssociate.getEmail());
+                factura.setClienteTelefono(
+                        request.getClienteTelefono() != null ? request.getClienteTelefono() : clienteToAssociate.getTelefono());
+            } else {
+                // Cliente doesn't exist
+                if (request.isGuardarCliente()) {
+                    // Create new cliente if guardarCliente=true
+                    Cliente nuevoCliente = new Cliente();
+                    nuevoCliente.setIdentificacionFiscal(request.getClienteIdentificacionFiscal());
+                    nuevoCliente.setNombre(request.getClienteNombre());
+                    nuevoCliente.setDireccion(request.getClienteDireccion());
+                    nuevoCliente.setEmail(request.getClienteEmail());
+                    nuevoCliente.setTelefono(request.getClienteTelefono());
+                    nuevoCliente.setActivo(true);
+
+                    Cliente savedCliente = clienteRepository.save(nuevoCliente);
+                    factura.setCliente(savedCliente);
+                }
+
+                // Always save snapshot from request data for nominative facturas
+                factura.setClienteIdentificacionFiscal(request.getClienteIdentificacionFiscal());
+                factura.setClienteNombre(request.getClienteNombre());
+                factura.setClienteDireccion(request.getClienteDireccion());
+                factura.setClienteEmail(request.getClienteEmail());
+                factura.setClienteTelefono(request.getClienteTelefono());
+            }
+        }
+
         try {
             Factura savedFactura = facturaRepository.save(factura);
             return mapToResponseDTO(savedFactura);
         } catch (DataIntegrityViolationException e) {
             // Race condition: otro thread ya creó la factura entre la validación y el save
             // Convertir a excepción de negocio para respuesta HTTP 409 consistente
-            throw new FacturaAlreadyExistsException("Ya existe una factura para el pedido #" + pedidoId);
+            throw new FacturaAlreadyExistsException("Ya existe una factura para el pedido #" + request.getPedidoId());
         }
     }
 
@@ -204,6 +275,16 @@ public class FacturaService {
         if (factura.getCreadaPorUsuario() != null) {
             dto.setCreadaPor(factura.getCreadaPorUsuario().getEmail());
         }
+
+        // Cliente snapshot data (frozen at factura creation time)
+        if (factura.getCliente() != null) {
+            dto.setClienteId(factura.getCliente().getId());
+        }
+        dto.setClienteIdentificacionFiscal(factura.getClienteIdentificacionFiscal());
+        dto.setClienteNombre(factura.getClienteNombre());
+        dto.setClienteDireccion(factura.getClienteDireccion());
+        dto.setClienteEmail(factura.getClienteEmail());
+        dto.setClienteTelefono(factura.getClienteTelefono());
 
         dto.setSubtotal(factura.getSubtotal());
         dto.setImpuestos(factura.getImpuestos());

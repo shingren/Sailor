@@ -95,6 +95,9 @@ public class SecurityConfig {
                 // PAGOS - ADMIN, CAJA
                 .requestMatchers("/pagos/**").hasAnyRole("ADMIN", "CAJA")
 
+                // CLIENTES - ADMIN, CAJA (for fiscal data in facturas)
+                .requestMatchers("/clientes/**").hasAnyRole("ADMIN", "CAJA")
+
                 // INVENTARIO - ADMIN, INVENTARIO
                 .requestMatchers("/insumos/**").hasAnyRole("ADMIN", "INVENTARIO")
                 .requestMatchers("/recetas/**").hasAnyRole("ADMIN", "INVENTARIO")

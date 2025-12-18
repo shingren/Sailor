@@ -8,6 +8,15 @@ public class FacturaResponseDTO {
     private Long pedidoId;
     private LocalDateTime fechaHora;
     private String creadaPor;  // Email del usuario que creó la factura
+
+    // Snapshot de datos fiscales del cliente (congelados)
+    private Long clienteId;  // ID del cliente si existe
+    private String clienteIdentificacionFiscal;
+    private String clienteNombre;
+    private String clienteDireccion;
+    private String clienteEmail;
+    private String clienteTelefono;
+
     private double subtotal;
     private double impuestos;
     private double descuento;
@@ -50,6 +59,54 @@ public class FacturaResponseDTO {
 
     public void setCreadaPor(String creadaPor) {
         this.creadaPor = creadaPor;
+    }
+
+    public Long getClienteId() {
+        return clienteId;
+    }
+
+    public void setClienteId(Long clienteId) {
+        this.clienteId = clienteId;
+    }
+
+    public String getClienteIdentificacionFiscal() {
+        return clienteIdentificacionFiscal;
+    }
+
+    public void setClienteIdentificacionFiscal(String clienteIdentificacionFiscal) {
+        this.clienteIdentificacionFiscal = clienteIdentificacionFiscal;
+    }
+
+    public String getClienteNombre() {
+        return clienteNombre;
+    }
+
+    public void setClienteNombre(String clienteNombre) {
+        this.clienteNombre = clienteNombre;
+    }
+
+    public String getClienteDireccion() {
+        return clienteDireccion;
+    }
+
+    public void setClienteDireccion(String clienteDireccion) {
+        this.clienteDireccion = clienteDireccion;
+    }
+
+    public String getClienteEmail() {
+        return clienteEmail;
+    }
+
+    public void setClienteEmail(String clienteEmail) {
+        this.clienteEmail = clienteEmail;
+    }
+
+    public String getClienteTelefono() {
+        return clienteTelefono;
+    }
+
+    public void setClienteTelefono(String clienteTelefono) {
+        this.clienteTelefono = clienteTelefono;
     }
 
     public double getSubtotal() {

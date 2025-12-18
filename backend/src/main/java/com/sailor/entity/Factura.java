@@ -27,6 +27,26 @@ public class Factura {
     @JoinColumn(name = "creada_por_usuario_id")
     private Usuario creadaPorUsuario;
 
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
+
+    // Snapshot de datos fiscales del cliente (congelados en el momento de facturar)
+    @Column(name = "cliente_identificacion_fiscal")
+    private String clienteIdentificacionFiscal;
+
+    @Column(name = "cliente_nombre")
+    private String clienteNombre;
+
+    @Column(name = "cliente_direccion")
+    private String clienteDireccion;
+
+    @Column(name = "cliente_email")
+    private String clienteEmail;
+
+    @Column(name = "cliente_telefono")
+    private String clienteTelefono;
+
     @Column(nullable = false)
     private double subtotal;
 
@@ -88,6 +108,54 @@ public class Factura {
 
     public void setCreadaPorUsuario(Usuario creadaPorUsuario) {
         this.creadaPorUsuario = creadaPorUsuario;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public String getClienteIdentificacionFiscal() {
+        return clienteIdentificacionFiscal;
+    }
+
+    public void setClienteIdentificacionFiscal(String clienteIdentificacionFiscal) {
+        this.clienteIdentificacionFiscal = clienteIdentificacionFiscal;
+    }
+
+    public String getClienteNombre() {
+        return clienteNombre;
+    }
+
+    public void setClienteNombre(String clienteNombre) {
+        this.clienteNombre = clienteNombre;
+    }
+
+    public String getClienteDireccion() {
+        return clienteDireccion;
+    }
+
+    public void setClienteDireccion(String clienteDireccion) {
+        this.clienteDireccion = clienteDireccion;
+    }
+
+    public String getClienteEmail() {
+        return clienteEmail;
+    }
+
+    public void setClienteEmail(String clienteEmail) {
+        this.clienteEmail = clienteEmail;
+    }
+
+    public String getClienteTelefono() {
+        return clienteTelefono;
+    }
+
+    public void setClienteTelefono(String clienteTelefono) {
+        this.clienteTelefono = clienteTelefono;
     }
 
     public double getSubtotal() {

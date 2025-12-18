@@ -17,7 +17,7 @@ public class FacturaController {
 
     @PostMapping
     public FacturaResponseDTO crearFactura(@RequestBody FacturaCreateRequestDTO request) {
-        return facturaService.crearFactura(request.getPedidoId());
+        return facturaService.crearFactura(request);
     }
 
     @GetMapping

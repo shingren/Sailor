@@ -19,6 +19,19 @@ function FacturasPage() {
   const [pedidosListos, setPedidosListos] = useState([])
   const [loadingPedidosListos, setLoadingPedidosListos] = useState(true)
 
+  // Cliente fiscal data state
+  const [esConsumidorFinal, setEsConsumidorFinal] = useState(true)
+  const [clienteForm, setClienteForm] = useState({
+    identificacionFiscal: '',
+    nombre: '',
+    direccion: '',
+    email: '',
+    telefono: '',
+    guardarCliente: false
+  })
+  const [clienteEncontrado, setClienteEncontrado] = useState(null)
+  const [buscandoCliente, setBuscandoCliente] = useState(false)
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchFacturas()
@@ -101,9 +114,86 @@ function FacturasPage() {
     }
   }
 
+  const buscarCliente = async () => {
+    if (!clienteForm.identificacionFiscal || clienteForm.identificacionFiscal.trim() === '') {
+      setError('Por favor ingresa una identificación fiscal para buscar')
+      return
+    }
+
+    setBuscandoCliente(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/clientes/buscar?identificacion=${encodeURIComponent(clienteForm.identificacionFiscal)}`, {
+        headers: { 'Authorization': getAuthHeader() }
+      })
+
+      if (response.status === 404) {
+        // Cliente no existe - limpiar campos para que usuario llene manualmente
+        setClienteEncontrado(null)
+        setSuccessMessage(`Cliente no encontrado. Ingresa los datos manualmente.`)
+        setClienteForm(prev => ({
+          ...prev,
+          nombre: '',
+          direccion: '',
+          email: '',
+          telefono: '',
+          guardarCliente: true // Sugerir guardar el nuevo cliente
+        }))
+        return
+      }
+
+      if (!response.ok) {
+        setError('Error al buscar cliente')
+        return
+      }
+
+      const cliente = await response.json()
+      setClienteEncontrado(cliente)
+      // Auto-rellenar campos con datos del cliente encontrado
+      setClienteForm(prev => ({
+        ...prev,
+        identificacionFiscal: cliente.identificacionFiscal,
+        nombre: cliente.nombre,
+        direccion: cliente.direccion || '',
+        email: cliente.email || '',
+        telefono: cliente.telefono || '',
+        guardarCliente: false // No necesario guardar si ya existe
+      }))
+      setSuccessMessage(`Cliente encontrado: ${cliente.nombre}`)
+    } catch (err) {
+      setError('Error al buscar cliente: ' + err.message)
+    } finally {
+      setBuscandoCliente(false)
+    }
+  }
+
+  const resetClienteForm = () => {
+    setClienteForm({
+      identificacionFiscal: '',
+      nombre: '',
+      direccion: '',
+      email: '',
+      telefono: '',
+      guardarCliente: false
+    })
+    setClienteEncontrado(null)
+  }
+
   const generarFacturaFromPedido = async (pedidoId) => {
     setError('')
     setSuccessMessage('')
+
+    // Validar cliente data si es nominativa
+    if (!esConsumidorFinal) {
+      if (!clienteForm.identificacionFiscal || clienteForm.identificacionFiscal.trim() === '') {
+        setError('Para factura nominativa, la identificación fiscal es obligatoria')
+        return
+      }
+      if (!clienteForm.nombre || clienteForm.nombre.trim() === '') {
+        setError('Para factura nominativa, el nombre del cliente es obligatorio')
+        return
+      }
+    }
 
     // Find pedido info for confirmation dialog
     const pedido = pedidosListos.find(p => p.id === pedidoId)
@@ -117,7 +207,8 @@ function FacturasPage() {
         return sum + itemTotal + extrasTotal
       }, 0)
 
-      confirmMessage = `¿Confirmas generar la factura para el pedido #${pedidoId} (Mesa ${pedido.mesaCodigo}) por ${formatCurrency(totalEstimado)}?\n\nEsta acción no se puede deshacer.`
+      const tipoFactura = esConsumidorFinal ? 'Consumidor Final' : `${clienteForm.nombre} (${clienteForm.identificacionFiscal})`
+      confirmMessage = `¿Confirmas generar la factura para el pedido #${pedidoId} (Mesa ${pedido.mesaCodigo}) por ${formatCurrency(totalEstimado)}?\n\nTipo: ${tipoFactura}\n\nEsta acción no se puede deshacer.`
     } else {
       confirmMessage += '\n\nEsta acción no se puede deshacer.'
     }
@@ -127,6 +218,21 @@ function FacturasPage() {
       return
     }
 
+    // Build request body
+    const requestBody = {
+      pedidoId: pedidoId,
+      esConsumidorFinal: esConsumidorFinal
+    }
+
+    if (!esConsumidorFinal) {
+      requestBody.clienteIdentificacionFiscal = clienteForm.identificacionFiscal
+      requestBody.clienteNombre = clienteForm.nombre
+      requestBody.clienteDireccion = clienteForm.direccion || null
+      requestBody.clienteEmail = clienteForm.email || null
+      requestBody.clienteTelefono = clienteForm.telefono || null
+      requestBody.guardarCliente = clienteForm.guardarCliente
+    }
+
     try {
       const response = await fetch('/api/facturas', {
         method: 'POST',
@@ -134,7 +240,7 @@ function FacturasPage() {
           'Content-Type': 'application/json',
           'Authorization': getAuthHeader()
         },
-        body: JSON.stringify({ pedidoId: pedidoId })
+        body: JSON.stringify(requestBody)
       })
 
       if (response.status === 401) {
@@ -161,9 +267,13 @@ function FacturasPage() {
       }
 
       const facturaData = await response.json()
-      setSuccessMessage(`Factura #${facturaData.id} generada exitosamente para el pedido #${pedidoId}`)
+      const tipoMsg = esConsumidorFinal ? '(Consumidor Final)' : `(${clienteForm.nombre})`
+      setSuccessMessage(`Factura #${facturaData.id} generada exitosamente para el pedido #${pedidoId} ${tipoMsg}`)
       fetchFacturas()
       fetchPedidosListos()
+      // Reset cliente form after successful creation
+      resetClienteForm()
+      setEsConsumidorFinal(true)
     } catch (err) {
       setError('Error al crear factura: ' + err.message)
     }
@@ -383,7 +493,138 @@ function FacturasPage() {
             onChange={(e) => setGenFacturaId(e.target.value)}
             required
           />
-          <button type="submit" className="btn-primary">Generar Factura</button>
+
+          {/* Cliente Fiscal Data Section */}
+          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Datos Fiscales:</div>
+
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  checked={esConsumidorFinal}
+                  onChange={() => {
+                    setEsConsumidorFinal(true)
+                    resetClienteForm()
+                  }}
+                  style={{ marginRight: '8px' }}
+                />
+                Consumidor Final
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  checked={!esConsumidorFinal}
+                  onChange={() => setEsConsumidorFinal(false)}
+                  style={{ marginRight: '8px' }}
+                />
+                Factura a nombre de
+              </label>
+            </div>
+
+            {!esConsumidorFinal && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="clienteIdentificacion" style={{ fontSize: '0.9em', fontWeight: 'bold' }}>
+                      Cédula/RUC *
+                    </label>
+                    <input
+                      id="clienteIdentificacion"
+                      type="text"
+                      value={clienteForm.identificacionFiscal}
+                      onChange={(e) => setClienteForm(prev => ({ ...prev, identificacionFiscal: e.target.value }))}
+                      required={!esConsumidorFinal}
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={buscarCliente}
+                    disabled={buscandoCliente || !clienteForm.identificacionFiscal}
+                    className="btn-secondary"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {buscandoCliente ? 'Buscando...' : 'Buscar Cliente'}
+                  </button>
+                </div>
+
+                <div>
+                  <label htmlFor="clienteNombre" style={{ fontSize: '0.9em', fontWeight: 'bold' }}>
+                    Nombre Completo *
+                  </label>
+                  <input
+                    id="clienteNombre"
+                    type="text"
+                    value={clienteForm.nombre}
+                    onChange={(e) => setClienteForm(prev => ({ ...prev, nombre: e.target.value }))}
+                    required={!esConsumidorFinal}
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="clienteDireccion" style={{ fontSize: '0.9em' }}>
+                    Dirección
+                  </label>
+                  <input
+                    id="clienteDireccion"
+                    type="text"
+                    value={clienteForm.direccion}
+                    onChange={(e) => setClienteForm(prev => ({ ...prev, direccion: e.target.value }))}
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label htmlFor="clienteEmail" style={{ fontSize: '0.9em' }}>
+                      Email
+                    </label>
+                    <input
+                      id="clienteEmail"
+                      type="email"
+                      value={clienteForm.email}
+                      onChange={(e) => setClienteForm(prev => ({ ...prev, email: e.target.value }))}
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="clienteTelefono" style={{ fontSize: '0.9em' }}>
+                      Teléfono
+                    </label>
+                    <input
+                      id="clienteTelefono"
+                      type="tel"
+                      value={clienteForm.telefono}
+                      onChange={(e) => setClienteForm(prev => ({ ...prev, telefono: e.target.value }))}
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+                </div>
+
+                {!clienteEncontrado && (
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '0.9em' }}>
+                    <input
+                      type="checkbox"
+                      checked={clienteForm.guardarCliente}
+                      onChange={(e) => setClienteForm(prev => ({ ...prev, guardarCliente: e.target.checked }))}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Guardar cliente para futuras facturas
+                  </label>
+                )}
+
+                {clienteEncontrado && (
+                  <div style={{ padding: '8px', backgroundColor: '#d1fae5', borderLeft: '3px solid #10b981', borderRadius: '4px', fontSize: '0.9em' }}>
+                    Cliente encontrado en el sistema
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button type="submit" className="btn-primary" style={{ marginTop: '15px' }}>Generar Factura</button>
         </form>
       </div>
 
@@ -496,6 +737,41 @@ function FacturasPage() {
                       {factura.estado}
                     </span>
                   </div>
+
+                  {/* Cliente Snapshot */}
+                  {factura.clienteNombre && (
+                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#eff6ff', borderLeft: '3px solid #3b82f6', borderRadius: '4px' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.9em', marginBottom: '5px' }}>Datos Fiscales (Snapshot):</div>
+                      <div style={{ fontSize: '0.85em', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '5px 10px' }}>
+                        <span style={{ color: '#666' }}>Nombre:</span>
+                        <span><strong>{factura.clienteNombre}</strong></span>
+                        {factura.clienteIdentificacionFiscal && factura.clienteIdentificacionFiscal !== 'CONSUMIDOR FINAL' && (
+                          <>
+                            <span style={{ color: '#666' }}>Identificación:</span>
+                            <span><strong>{factura.clienteIdentificacionFiscal}</strong></span>
+                          </>
+                        )}
+                        {factura.clienteDireccion && (
+                          <>
+                            <span style={{ color: '#666' }}>Dirección:</span>
+                            <span>{factura.clienteDireccion}</span>
+                          </>
+                        )}
+                        {factura.clienteEmail && (
+                          <>
+                            <span style={{ color: '#666' }}>Email:</span>
+                            <span>{factura.clienteEmail}</span>
+                          </>
+                        )}
+                        {factura.clienteTelefono && (
+                          <>
+                            <span style={{ color: '#666' }}>Teléfono:</span>
+                            <span>{factura.clienteTelefono}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                     <div>
