@@ -13,7 +13,10 @@ function ProductosPage() {
     activo: true
   })
   const [createError, setCreateError] = useState(null)
-  const { isAuthenticated, getAuthHeader } = useAuth()
+  const [editingPrecioId, setEditingPrecioId] = useState(null)
+  const [editingPrecioValue, setEditingPrecioValue] = useState('')
+  const [precioError, setPrecioError] = useState(null)
+  const { isAuthenticated, getAuthHeader, hasRole } = useAuth()
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -101,6 +104,63 @@ function ProductosPage() {
       }
     } catch (err) {
       setError('Error al cambiar estado del producto: ' + err.message)
+    }
+  }
+
+  const handleStartEditPrecio = (producto) => {
+    setEditingPrecioId(producto.id)
+    setEditingPrecioValue(producto.precio.toString())
+    setPrecioError(null)
+  }
+
+  const handleCancelEditPrecio = () => {
+    setEditingPrecioId(null)
+    setEditingPrecioValue('')
+    setPrecioError(null)
+  }
+
+  const handleSavePrecio = async (productoId) => {
+    setPrecioError(null)
+
+    const newPrecio = parseFloat(editingPrecioValue)
+
+    if (isNaN(newPrecio) || newPrecio <= 0) {
+      setPrecioError('El precio debe ser un número mayor a 0')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/productos/${productoId}/precio`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthHeader()
+        },
+        body: JSON.stringify({ precio: newPrecio })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        setPrecioError('No autorizado para actualizar precios')
+        return
+      }
+
+      if (response.status === 400) {
+        const errorData = await response.json()
+        setPrecioError(errorData.error || 'Precio inválido')
+        return
+      }
+
+      if (!response.ok) {
+        setPrecioError('Error al actualizar precio')
+        return
+      }
+
+      // Success
+      setEditingPrecioId(null)
+      setEditingPrecioValue('')
+      fetchProductos()
+    } catch (err) {
+      setPrecioError('Error al actualizar precio: ' + err.message)
     }
   }
 
@@ -195,7 +255,50 @@ function ProductosPage() {
                   <td>{producto.id}</td>
                   <td>{producto.nombre}</td>
                   <td>{producto.categoria || '-'}</td>
-                  <td>${producto.precio.toFixed(2)}</td>
+                  <td>
+                    {editingPrecioId === producto.id ? (
+                      // Modo edición (solo ADMIN puede llegar aquí)
+                      <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editingPrecioValue}
+                          onChange={(e) => setEditingPrecioValue(e.target.value)}
+                          style={{ width: '100px' }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSavePrecio(producto.id)}
+                          className="btn-success btn-small"
+                          title="Guardar precio"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={handleCancelEditPrecio}
+                          className="btn-secondary btn-small"
+                          title="Cancelar"
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    ) : (
+                      // Modo visualización
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span>${producto.precio.toFixed(2)}</span>
+                        {hasRole('ADMIN') && (
+                          <button
+                            onClick={() => handleStartEditPrecio(producto)}
+                            className="btn-secondary btn-small"
+                            title="Editar precio"
+                            style={{ padding: '2px 8px', fontSize: '0.85em' }}
+                          >
+                            ✎
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td>
                     <button
                       onClick={() => handleToggleActive(producto.id)}
@@ -210,6 +313,7 @@ function ProductosPage() {
             </tbody>
           </table>
         )}
+        {precioError && <div className="alert alert-error" style={{ marginTop: '10px' }}>{precioError}</div>}
       </div>
     </div>
   )

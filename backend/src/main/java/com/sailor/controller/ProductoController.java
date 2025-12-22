@@ -35,4 +35,33 @@ public class ProductoController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PatchMapping("/{id}/precio")
+    public ResponseEntity<?> updatePrecio(@PathVariable Long id, @RequestBody PrecioUpdateRequest request) {
+        // Validate precio
+        if (request.getPrecio() == null || request.getPrecio() <= 0) {
+            return ResponseEntity.badRequest().body("{\"error\":\"El precio debe ser mayor a 0\"}");
+        }
+
+        return productoRepository.findById(id)
+                .map(producto -> {
+                    producto.setPrecio(request.getPrecio());
+                    Producto updated = productoRepository.save(producto);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Inner class for precio update request
+    static class PrecioUpdateRequest {
+        private Double precio;
+
+        public Double getPrecio() {
+            return precio;
+        }
+
+        public void setPrecio(Double precio) {
+            this.precio = precio;
+        }
+    }
 }
