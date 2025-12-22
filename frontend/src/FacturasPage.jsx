@@ -830,9 +830,23 @@ function FacturasPage() {
                         <td>{pedido.mesaCodigo}</td>
                         <td>{new Date(pedido.fechaHora).toLocaleString()}</td>
                         <td>
-                          {pedido.items.length} ítem{pedido.items.length !== 1 ? 's' : ''}
-                          <div style={{ fontSize: '0.85em', color: '#666', marginTop: '2px' }}>
-                            {pedido.items.map(item => `${item.cantidad}x ${item.productoNombre}`).join(', ')}
+                          <div style={{ fontSize: '0.9em' }}>
+                            {pedido.items.map((item, idx) => (
+                              <div key={idx} style={{ marginBottom: idx < pedido.items.length - 1 ? '8px' : '0' }}>
+                                <div style={{ fontWeight: '500' }}>
+                                  {item.cantidad}x {item.productoNombre}
+                                </div>
+                                {item.extras && item.extras.length > 0 && (
+                                  <div style={{ marginTop: '3px', marginLeft: '12px', fontSize: '0.85em', color: '#666' }}>
+                                    {item.extras.map((extra, extraIdx) => (
+                                      <div key={extraIdx}>
+                                        + {extra.nombre} x{extra.cantidad} ({formatCurrency(extra.precioUnitario)})
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </td>
                         <td style={{ fontWeight: 'bold', color: '#059669' }}>
