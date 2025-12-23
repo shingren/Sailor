@@ -93,6 +93,9 @@ public class SecurityConfig {
                 // FACTURAS - ADMIN, CAJA
                 .requestMatchers("/facturas/**").hasAnyRole("ADMIN", "CAJA")
 
+                // CUENTAS (Open Tabs) - ADMIN, CAJA (same as facturas)
+                .requestMatchers("/cuentas/**").hasAnyRole("ADMIN", "CAJA")
+
                 // PAGOS - ADMIN, CAJA
                 .requestMatchers("/pagos/**").hasAnyRole("ADMIN", "CAJA")
 

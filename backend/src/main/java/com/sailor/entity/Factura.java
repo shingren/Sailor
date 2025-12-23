@@ -13,9 +13,15 @@ public class Factura {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Legacy: one factura per pedido (nullable for migration to cuenta-based)
     @OneToOne
-    @JoinColumn(name = "pedido_id", nullable = false, unique = true)
+    @JoinColumn(name = "pedido_id", unique = true)
     private Pedido pedido;
+
+    // New: one factura per cuenta
+    @OneToOne
+    @JoinColumn(name = "cuenta_id", unique = true)
+    private Cuenta cuenta;
 
     @Column(nullable = false)
     private LocalDateTime fechaHora;
@@ -204,5 +210,13 @@ public class Factura {
 
     public void setPagos(List<Pago> pagos) {
         this.pagos = pagos;
+    }
+
+    public Cuenta getCuenta() {
+        return cuenta;
+    }
+
+    public void setCuenta(Cuenta cuenta) {
+        this.cuenta = cuenta;
     }
 }

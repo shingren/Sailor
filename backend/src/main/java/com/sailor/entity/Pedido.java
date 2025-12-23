@@ -17,6 +17,10 @@ public class Pedido {
     @JoinColumn(name = "mesa_id", nullable = false)
     private Mesa mesa;
 
+    @ManyToOne
+    @JoinColumn(name = "cuenta_id")
+    private Cuenta cuenta;
+
     @Column(nullable = false)
     private LocalDateTime fechaHora;
 
@@ -90,5 +94,13 @@ public class Pedido {
 
     public void setFactura(Factura factura) {
         this.factura = factura;
+    }
+
+    public Cuenta getCuenta() {
+        return cuenta;
+    }
+
+    public void setCuenta(Cuenta cuenta) {
+        this.cuenta = cuenta;
     }
 }

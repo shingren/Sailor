@@ -19,6 +19,12 @@ function FacturasPage() {
   const [pedidosListos, setPedidosListos] = useState([])
   const [loadingPedidosListos, setLoadingPedidosListos] = useState(true)
 
+  // New state for cuenta-based invoicing (migration to tab/open order flow)
+  const [cuentasAbiertas, setCuentasAbiertas] = useState([])
+  const [loadingCuentasAbiertas, setLoadingCuentasAbiertas] = useState(true)
+  const [cuentasListasFacturar, setCuentasListasFacturar] = useState([])
+  const [loadingCuentasListas, setLoadingCuentasListas] = useState(true)
+
   // Cliente fiscal data state - POR PEDIDO (aislado por pedidoId)
   const [datosFiscalesPorPedido, setDatosFiscalesPorPedido] = useState({})
   // Estructura: { [pedidoId]: { esConsumidorFinal, clienteForm, clienteEncontrado, buscandoCliente, expanded } }
@@ -40,6 +46,8 @@ function FacturasPage() {
     if (isAuthenticated) {
       fetchFacturas()
       fetchPedidosListos()
+      fetchCuentasAbiertas()
+      fetchCuentasListasFacturar()
     }
   }, [isAuthenticated])
 
@@ -115,6 +123,42 @@ function FacturasPage() {
       console.error('Error al cargar pedidos listos:', err)
     } finally {
       setLoadingPedidosListos(false)
+    }
+  }
+
+  const fetchCuentasAbiertas = async () => {
+    setLoadingCuentasAbiertas(true)
+    try {
+      const response = await fetch('/api/cuentas/abiertas', {
+        headers: { 'Authorization': getAuthHeader() }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCuentasAbiertas(data)
+      }
+    } catch (err) {
+      console.error('Error al cargar cuentas abiertas:', err)
+    } finally {
+      setLoadingCuentasAbiertas(false)
+    }
+  }
+
+  const fetchCuentasListasFacturar = async () => {
+    setLoadingCuentasListas(true)
+    try {
+      const response = await fetch('/api/cuentas/listas-facturar', {
+        headers: { 'Authorization': getAuthHeader() }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCuentasListasFacturar(data)
+      }
+    } catch (err) {
+      console.error('Error al cargar cuentas listas:', err)
+    } finally {
+      setLoadingCuentasListas(false)
     }
   }
 
@@ -401,6 +445,69 @@ function FacturasPage() {
       fetchPedidosListos()
       // Reset datos fiscales del pedido específico after successful creation
       resetDatosFiscalesPedido(pedidoId)
+    } catch (err) {
+      setError('Error al crear factura: ' + err.message)
+    }
+  }
+
+  const generarFacturaFromCuenta = async (cuentaId) => {
+    setError('')
+    setSuccessMessage('')
+
+    // Find cuenta info for confirmation dialog
+    const cuenta = cuentasListasFacturar.find(c => c.id === cuentaId)
+    if (!cuenta) {
+      setError('No se encontró la cuenta')
+      return
+    }
+
+    const confirmMessage = `¿Confirmas generar la factura para la cuenta de Mesa ${cuenta.mesaCodigo}?\n\nTotal estimado: ${formatCurrency(cuenta.totalEstimado)}\nPedidos: ${cuenta.totalPedidos}\n\nEsta acción no se puede deshacer.`
+
+    // Show confirmation dialog
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/facturas/cuenta/${cuentaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthHeader()
+        },
+        body: JSON.stringify({
+          esConsumidorFinal: true
+        })
+      })
+
+      if (response.status === 401) {
+        setError('No autorizado - por favor inicia sesión nuevamente')
+        return
+      }
+
+      if (response.status === 400) {
+        const errorData = await response.json()
+        setError(errorData.error || 'Estado de cuenta inválido para facturación')
+        return
+      }
+
+      if (response.status === 409) {
+        const errorData = await response.json()
+        setError(errorData.error || 'Ya existe una factura para esta cuenta')
+        return
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        setError('Error al crear factura: ' + errorText)
+        return
+      }
+
+      const facturaData = await response.json()
+      setSuccessMessage(`Factura #${facturaData.id} generada exitosamente para la cuenta de Mesa ${cuenta.mesaCodigo}`)
+      fetchFacturas()
+      fetchCuentasAbiertas()
+      fetchCuentasListasFacturar()
     } catch (err) {
       setError('Error al crear factura: ' + err.message)
     }
@@ -759,315 +866,179 @@ function FacturasPage() {
         </div>
       )}
 
-      {/* NEW SECTION: Pedidos Listos para Facturar */}
+      {/* ORDENES ABIERTAS (Cuentas abiertas con pedidos en progreso) */}
       <div className="card">
         <div className="card-header">
-          <h2 className="card-title">Pedidos Listos para Facturar</h2>
+          <h2 className="card-title">Ordenes Abiertas</h2>
           <p className="text-muted" style={{ fontSize: '0.9rem', marginTop: '5px' }}>
-            Pedidos entregados que aún no tienen factura generada
+            Cuentas con pedidos en progreso (PENDIENTE, PREPARACION, LISTO)
           </p>
         </div>
-        {loadingPedidosListos ? (
-          <div className="loading">Cargando pedidos...</div>
-        ) : pedidosListos.length === 0 ? (
-          <p className="text-muted">No hay pedidos listos para facturar</p>
+        {loadingCuentasAbiertas ? (
+          <div className="loading">Cargando ordenes abiertas...</div>
+        ) : cuentasAbiertas.length === 0 ? (
+          <p className="text-muted">No hay ordenes abiertas</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
-                  <th>ID Pedido</th>
+                  <th>ID Cuenta</th>
                   <th>Mesa</th>
-                  <th>Fecha y Hora</th>
-                  <th>Items</th>
+                  <th>Fecha Apertura</th>
+                  <th>Total Pedidos</th>
+                  <th>Pendientes</th>
+                  <th>Entregados</th>
                   <th>Total Estimado</th>
-                  <th>Estado</th>
-                  <th>Datos Fiscales</th>
+                  <th>Pedidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cuentasAbiertas.map(cuenta => {
+                  return (
+                    <tr key={cuenta.id}>
+                      <td><strong>#{cuenta.id}</strong></td>
+                      <td><strong>{cuenta.mesaCodigo}</strong></td>
+                      <td>{new Date(cuenta.fechaHoraApertura).toLocaleString()}</td>
+                      <td>{cuenta.totalPedidos}</td>
+                      <td>
+                        <span className="badge badge-yellow">
+                          {cuenta.pedidosPendientes}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge badge-green">
+                          {cuenta.pedidosEntregados}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 'bold', color: '#059669' }}>
+                        {formatCurrency(cuenta.totalEstimado)}
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.85em' }}>
+                          {cuenta.pedidos && cuenta.pedidos.length > 0 ? (
+                            cuenta.pedidos.map(pedido => (
+                              <div key={pedido.id} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                                  Pedido #{pedido.id} - <span className="badge badge-yellow">{pedido.estado}</span>
+                                </div>
+                                {pedido.items && pedido.items.map((item, idx) => (
+                                  <div key={idx} style={{ marginLeft: '10px', marginBottom: '5px' }}>
+                                    <div style={{ fontWeight: '500' }}>
+                                      {item.cantidad}x {item.productoNombre}
+                                    </div>
+                                    {item.extras && item.extras.length > 0 && (
+                                      <div style={{ marginTop: '2px', marginLeft: '12px', fontSize: '0.85em', color: '#666' }}>
+                                        {item.extras.map((extra, extraIdx) => (
+                                          <div key={extraIdx}>
+                                            + {extra.nombre} x{extra.cantidad} ({formatCurrency(extra.precioUnitario)})
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-muted">Sin pedidos</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* CUENTA-BASED: Pedidos Listos para Facturar (Cuentas listas) */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title">Pedidos Listos para Facturar</h2>
+          <p className="text-muted" style={{ fontSize: '0.9rem', marginTop: '5px' }}>
+            Cuentas con todos los pedidos entregados, listas para facturar
+          </p>
+        </div>
+        {loadingCuentasListas ? (
+          <div className="loading">Cargando cuentas listas...</div>
+        ) : cuentasListasFacturar.length === 0 ? (
+          <p className="text-muted">No hay cuentas listas para facturar</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Cuenta</th>
+                  <th>Mesa</th>
+                  <th>Total Pedidos</th>
+                  <th>Entregados</th>
+                  <th>Total Estimado</th>
+                  <th>Pedidos (Items + Extras)</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {pedidosListos.map(pedido => {
-                  // Calculate total estimate
-                  const totalEstimado = pedido.items.reduce((sum, item) => {
-                    const itemTotal = item.cantidad * item.precioUnitario
-                    const extrasTotal = (item.extras || []).reduce((eSum, extra) =>
-                      eSum + (extra.cantidad * extra.precioUnitario * item.cantidad), 0)
-                    return sum + itemTotal + extrasTotal
-                  }, 0)
-
-                  // Inicializar datos fiscales si no existen
-                  const datosPedido = datosFiscalesPorPedido[pedido.id] || {
-                    esConsumidorFinal: true,
-                    clienteForm: {
-                      identificacionFiscal: '',
-                      nombre: '',
-                      direccion: '',
-                      email: '',
-                      telefono: '',
-                      guardarCliente: false
-                    },
-                    clienteEncontrado: null,
-                    buscandoCliente: false,
-                    expanded: false
-                  }
-
-                  // Determinar resumen fiscal para mostrar
-                  const resumenFiscal = datosPedido.esConsumidorFinal
-                    ? '📋 Consumidor Final'
-                    : datosPedido.clienteForm.nombre
-                      ? `📋 ${datosPedido.clienteForm.nombre} (${datosPedido.clienteForm.identificacionFiscal})`
-                      : '📋 Factura a nombre de (sin datos)'
-
-                  // Validación: para factura nominativa, requerir identificación + nombre
-                  const canGenerateFactura = datosPedido.esConsumidorFinal ||
-                    (datosPedido.clienteForm.identificacionFiscal?.trim() && datosPedido.clienteForm.nombre?.trim())
-
+                {cuentasListasFacturar.map(cuenta => {
                   return (
-                    <React.Fragment key={pedido.id}>
-                      <tr>
-                        <td><strong>#{pedido.id}</strong></td>
-                        <td>{pedido.mesaCodigo}</td>
-                        <td>{new Date(pedido.fechaHora).toLocaleString()}</td>
-                        <td>
-                          <div style={{ fontSize: '0.9em' }}>
-                            {pedido.items.map((item, idx) => (
-                              <div key={idx} style={{ marginBottom: idx < pedido.items.length - 1 ? '8px' : '0' }}>
-                                <div style={{ fontWeight: '500' }}>
-                                  {item.cantidad}x {item.productoNombre}
+                    <tr key={cuenta.id}>
+                      <td><strong>#{cuenta.id}</strong></td>
+                      <td><strong>{cuenta.mesaCodigo}</strong></td>
+                      <td>{cuenta.totalPedidos}</td>
+                      <td>
+                        <span className="badge badge-green">
+                          {cuenta.pedidosEntregados}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 'bold', color: '#059669' }}>
+                        {formatCurrency(cuenta.totalEstimado)}
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.85em' }}>
+                          {cuenta.pedidos && cuenta.pedidos.length > 0 ? (
+                            cuenta.pedidos.map(pedido => (
+                              <div key={pedido.id} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                                  Pedido #{pedido.id} - <span className="badge badge-green">{pedido.estado}</span>
                                 </div>
-                                {item.extras && item.extras.length > 0 && (
-                                  <div style={{ marginTop: '3px', marginLeft: '12px', fontSize: '0.85em', color: '#666' }}>
-                                    {item.extras.map((extra, extraIdx) => (
-                                      <div key={extraIdx}>
-                                        + {extra.nombre} x{extra.cantidad} ({formatCurrency(extra.precioUnitario)})
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={{ fontWeight: 'bold', color: '#059669' }}>
-                          {formatCurrency(totalEstimado)}
-                        </td>
-                        <td>
-                          <span className="badge badge-green">
-                            {pedido.estado}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ fontSize: '0.85em', color: '#555', marginBottom: '5px' }}>
-                            {resumenFiscal}
-                          </div>
-                          <button
-                            onClick={() => toggleDatosFiscalesPedido(pedido.id)}
-                            className="btn-secondary btn-small"
-                            style={{ fontSize: '0.8rem', padding: '3px 8px' }}
-                          >
-                            {datosPedido.expanded ? '▲ Ocultar' : '▼ Editar'}
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => generarFacturaFromPedido(pedido.id)}
-                            className="btn-primary btn-small"
-                            style={{ whiteSpace: 'nowrap' }}
-                            disabled={!canGenerateFactura}
-                            title={!canGenerateFactura ? 'Completa los datos fiscales (identificación + nombre)' : ''}
-                          >
-                            Generar Factura
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* Fila expandible con formulario de datos fiscales */}
-                      {datosPedido.expanded && (
-                        <tr>
-                          <td colSpan="8" style={{ backgroundColor: '#f9fafb', padding: '15px' }}>
-                            <div style={{ maxWidth: '600px' }}>
-                              <h4 style={{ marginBottom: '10px', fontSize: '1rem' }}>Datos Fiscales - Pedido #{pedido.id}</h4>
-
-                              {/* Radio buttons: Consumidor Final / Factura a nombre de */}
-                              <div style={{ marginBottom: '15px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', cursor: 'pointer' }}>
-                                  <input
-                                    type="radio"
-                                    checked={datosPedido.esConsumidorFinal === true}
-                                    onChange={() => {
-                                      updateDatosFiscalesPedido(pedido.id, {
-                                        esConsumidorFinal: true,
-                                        clienteForm: {
-                                          identificacionFiscal: '',
-                                          nombre: '',
-                                          direccion: '',
-                                          email: '',
-                                          telefono: '',
-                                          guardarCliente: false
-                                        },
-                                        clienteEncontrado: null
-                                      })
-                                    }}
-                                    style={{ marginRight: '8px' }}
-                                  />
-                                  <span>Consumidor Final</span>
-                                </label>
-                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                  <input
-                                    type="radio"
-                                    checked={datosPedido.esConsumidorFinal === false}
-                                    onChange={() => {
-                                      updateDatosFiscalesPedido(pedido.id, {
-                                        esConsumidorFinal: false
-                                      })
-                                    }}
-                                    style={{ marginRight: '8px' }}
-                                  />
-                                  <span>Factura a nombre de</span>
-                                </label>
-                              </div>
-
-                              {/* Si selecciona "Factura a nombre de", mostrar formulario cliente */}
-                              {!datosPedido.esConsumidorFinal && (
-                                <div style={{ paddingLeft: '10px', borderLeft: '3px solid #3b82f6' }}>
-                                  {/* Búsqueda por identificación */}
-                                  <div style={{ marginBottom: '15px' }}>
-                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                                      Cédula / RUC *
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                      <input
-                                        type="text"
-                                        value={datosPedido.clienteForm.identificacionFiscal}
-                                        onChange={(e) => {
-                                          updateDatosFiscalesPedido(pedido.id, {
-                                            clienteForm: {
-                                              ...datosPedido.clienteForm,
-                                              identificacionFiscal: e.target.value
-                                            }
-                                          })
-                                        }}
-                                        placeholder="Ingresa cédula o RUC"
-                                        style={{ flex: 1 }}
-                                      />
-                                      <button
-                                        onClick={() => buscarClientePedido(pedido.id)}
-                                        disabled={!datosPedido.clienteForm.identificacionFiscal || datosPedido.buscandoCliente}
-                                        className="btn-secondary"
-                                      >
-                                        {datosPedido.buscandoCliente ? 'Buscando...' : 'Buscar Cliente'}
-                                      </button>
+                                {pedido.items && pedido.items.map((item, idx) => (
+                                  <div key={idx} style={{ marginLeft: '10px', marginBottom: '5px' }}>
+                                    <div style={{ fontWeight: '500' }}>
+                                      {item.cantidad}x {item.productoNombre}
                                     </div>
-                                  </div>
-
-                                  {/* Formulario de datos cliente */}
-                                  <div style={{ display: 'grid', gap: '10px' }}>
-                                    <div>
-                                      <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                                        Nombre Completo *
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={datosPedido.clienteForm.nombre}
-                                        onChange={(e) => {
-                                          updateDatosFiscalesPedido(pedido.id, {
-                                            clienteForm: {
-                                              ...datosPedido.clienteForm,
-                                              nombre: e.target.value
-                                            }
-                                          })
-                                        }}
-                                        placeholder="Nombre del cliente"
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <label style={{ display: 'block', marginBottom: '5px' }}>Dirección</label>
-                                      <input
-                                        type="text"
-                                        value={datosPedido.clienteForm.direccion}
-                                        onChange={(e) => {
-                                          updateDatosFiscalesPedido(pedido.id, {
-                                            clienteForm: {
-                                              ...datosPedido.clienteForm,
-                                              direccion: e.target.value
-                                            }
-                                          })
-                                        }}
-                                        placeholder="Dirección (opcional)"
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <label style={{ display: 'block', marginBottom: '5px' }}>Email</label>
-                                      <input
-                                        type="email"
-                                        value={datosPedido.clienteForm.email}
-                                        onChange={(e) => {
-                                          updateDatosFiscalesPedido(pedido.id, {
-                                            clienteForm: {
-                                              ...datosPedido.clienteForm,
-                                              email: e.target.value
-                                            }
-                                          })
-                                        }}
-                                        placeholder="Email (opcional)"
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <label style={{ display: 'block', marginBottom: '5px' }}>Teléfono</label>
-                                      <input
-                                        type="tel"
-                                        value={datosPedido.clienteForm.telefono}
-                                        onChange={(e) => {
-                                          updateDatosFiscalesPedido(pedido.id, {
-                                            clienteForm: {
-                                              ...datosPedido.clienteForm,
-                                              telefono: e.target.value
-                                            }
-                                          })
-                                        }}
-                                        placeholder="Teléfono (opcional)"
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-
-                                    {/* Checkbox "Guardar cliente" - solo si no existe cliente */}
-                                    {!datosPedido.clienteEncontrado && (
-                                      <div style={{ marginTop: '10px' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                          <input
-                                            type="checkbox"
-                                            checked={datosPedido.clienteForm.guardarCliente}
-                                            onChange={(e) => {
-                                              updateDatosFiscalesPedido(pedido.id, {
-                                                clienteForm: {
-                                                  ...datosPedido.clienteForm,
-                                                  guardarCliente: e.target.checked
-                                                }
-                                              })
-                                            }}
-                                            style={{ marginRight: '8px' }}
-                                          />
-                                          <span>Guardar cliente para futuras facturas</span>
-                                        </label>
+                                    {item.extras && item.extras.length > 0 && (
+                                      <div style={{ marginTop: '2px', marginLeft: '12px', fontSize: '0.85em', color: '#666' }}>
+                                        {item.extras.map((extra, extraIdx) => (
+                                          <div key={extraIdx}>
+                                            + {extra.nombre} x{extra.cantidad} ({formatCurrency(extra.precioUnitario)})
+                                          </div>
+                                        ))}
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+                                ))}
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-muted">Sin pedidos</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => generarFacturaFromCuenta(cuenta.id)}
+                          className="btn-primary btn-small"
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          Generar Factura
+                        </button>
+                      </td>
+                    </tr>
                   )
                 })}
+
               </tbody>
             </table>
           </div>

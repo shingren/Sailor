@@ -40,6 +40,9 @@ public class PedidoService {
     @Autowired
     private RecetaExtraRepository recetaExtraRepository;
 
+    @Autowired
+    private CuentaService cuentaService;
+
     @Transactional
     public PedidoResponseDTO createPedido(PedidoCreateRequestDTO request) {
         Mesa mesa = mesaRepository.findById(request.getMesaId())
@@ -53,8 +56,12 @@ public class PedidoService {
         // Si está ocupada, mantener (permite múltiples pedidos en misma mesa)
         // Si está reservada, no cambiar (respetar reserva)
 
+        // Find or create open Cuenta for this mesa
+        Cuenta cuenta = cuentaService.findOrCreateOpenCuenta(mesa, null);
+
         Pedido pedido = new Pedido();
         pedido.setMesa(mesa);
+        pedido.setCuenta(cuenta);
         pedido.setObservaciones(request.getObservaciones());
 
         for (PedidoItemRequestDTO itemRequest : request.getItems()) {

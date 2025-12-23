@@ -20,6 +20,14 @@ public class FacturaController {
         return facturaService.crearFactura(request);
     }
 
+    /**
+     * Create factura from Cuenta (new flow - tab/open order per table)
+     */
+    @PostMapping("/cuenta/{cuentaId}")
+    public FacturaResponseDTO crearFacturaPorCuenta(@PathVariable Long cuentaId, @RequestBody FacturaCreateRequestDTO request) {
+        return facturaService.crearFacturaPorCuenta(cuentaId, request);
+    }
+
     @GetMapping
     public List<FacturaResponseDTO> listarFacturas() {
         return facturaService.listarFacturas();
