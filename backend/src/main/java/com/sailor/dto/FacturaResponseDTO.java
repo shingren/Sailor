@@ -6,6 +6,7 @@ import java.util.List;
 public class FacturaResponseDTO {
     private Long id;
     private Long pedidoId;
+    private Long cuentaId;
     private LocalDateTime fechaHora;
     private String creadaPor;  // Email del usuario que creó la factura
 
@@ -43,6 +44,14 @@ public class FacturaResponseDTO {
 
     public void setPedidoId(Long pedidoId) {
         this.pedidoId = pedidoId;
+    }
+
+    public Long getCuentaId() {
+        return cuentaId;
+    }
+
+    public void setCuentaId(Long cuentaId) {
+        this.cuentaId = cuentaId;
     }
 
     public LocalDateTime getFechaHora() {

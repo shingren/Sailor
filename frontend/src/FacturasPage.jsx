@@ -14,6 +14,7 @@ function FacturasPage() {
   const [pagoForms, setPagoForms] = useState({})
   const [expandedFacturas, setExpandedFacturas] = useState({})
   const [pedidoDetails, setPedidoDetails] = useState({})
+  const [cuentaDetails, setCuentaDetails] = useState({})
 
   // New state for pedidos listos para facturar
   const [pedidosListos, setPedidosListos] = useState([])
@@ -640,15 +641,16 @@ function FacturasPage() {
     }
   }
 
-  const toggleFacturaDetails = async (facturaId, pedidoId) => {
+  const toggleFacturaDetails = async (facturaId, pedidoId, cuentaId) => {
     if (expandedFacturas[facturaId]) {
       // Collapse
       setExpandedFacturas(prev => ({ ...prev, [facturaId]: false }))
     } else {
-      // Expand and fetch pedido details if not already loaded
+      // Expand and fetch details if not already loaded
       setExpandedFacturas(prev => ({ ...prev, [facturaId]: true }))
 
-      if (!pedidoDetails[pedidoId]) {
+      // For pedido-based facturas: fetch pedido details
+      if (pedidoId && !pedidoDetails[pedidoId]) {
         try {
           const response = await fetch(`/api/pedidos/${pedidoId}`, {
             headers: { 'Authorization': getAuthHeader() }
@@ -660,6 +662,22 @@ function FacturasPage() {
           }
         } catch (err) {
           console.error('Error fetching pedido details:', err)
+        }
+      }
+
+      // For cuenta-based facturas: fetch cuenta details (includes all pedidos)
+      if (cuentaId && !cuentaDetails[cuentaId]) {
+        try {
+          const response = await fetch(`/api/cuentas/${cuentaId}`, {
+            headers: { 'Authorization': getAuthHeader() }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            setCuentaDetails(prev => ({ ...prev, [cuentaId]: data }))
+          }
+        } catch (err) {
+          console.error('Error fetching cuenta details:', err)
         }
       }
     }
@@ -1148,7 +1166,7 @@ function FacturasPage() {
 
                   <div style={{ marginTop: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button
-                      onClick={() => toggleFacturaDetails(factura.id, factura.pedidoId)}
+                      onClick={() => toggleFacturaDetails(factura.id, factura.pedidoId, factura.cuentaId)}
                       className="btn-secondary btn-small"
                     >
                       {isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}
@@ -1208,49 +1226,133 @@ function FacturasPage() {
                     )}
                   </div>
 
-                  {isExpanded && pedido && (
+                  {isExpanded && (
                     <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                      <strong>Detalle del Pedido:</strong>
-                      <ul style={{ marginTop: '8px', marginLeft: '20px' }}>
-                        {pedido.items.map((item, idx) => {
-                          const itemSubtotal = item.cantidad * item.precioUnitario
-                          const extrasSubtotal = item.extras?.reduce((sum, extra) => sum + (extra.cantidad * extra.precioUnitario * item.cantidad), 0) || 0
-                          const itemTotal = itemSubtotal + extrasSubtotal
+                      {factura.cuentaId ? (
+                        // Factura generada desde cuenta - mostrar todos los pedidos
+                        <>
+                          {cuentaDetails[factura.cuentaId] ? (
+                            <>
+                              <strong>Pedidos de la cuenta (Mesa: {cuentaDetails[factura.cuentaId].mesaCodigo}):</strong>
+                              {cuentaDetails[factura.cuentaId].pedidos && cuentaDetails[factura.cuentaId].pedidos.length > 0 ? (
+                                cuentaDetails[factura.cuentaId].pedidos.map((pedido, pedidoIdx) => (
+                                  <div key={pedido.id} style={{ marginTop: '15px', paddingLeft: '10px', borderLeft: '2px solid #e5e7eb' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                                      Pedido #{pedido.id} - {new Date(pedido.fechaHora).toLocaleString()}
+                                    </div>
+                                    <ul style={{ marginTop: '8px', marginLeft: '20px' }}>
+                                      {pedido.items.map((item, idx) => {
+                                        const itemSubtotal = item.cantidad * item.precioUnitario
+                                        const extrasSubtotal = item.extras?.reduce((sum, extra) => sum + (extra.cantidad * extra.precioUnitario * item.cantidad), 0) || 0
+                                        const itemTotal = itemSubtotal + extrasSubtotal
 
-                          return (
-                            <li key={idx} style={{ marginBottom: '10px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <div>
-                                  <strong>{item.cantidad}x</strong> {item.productoNombre}
-                                </div>
-                                <div style={{ marginLeft: '15px' }}>
-                                  {formatCurrency(itemSubtotal)}
-                                </div>
-                              </div>
-                              {item.extras && item.extras.length > 0 && (
-                                <ul style={{ marginTop: '4px', marginLeft: '20px', listStyleType: 'circle', fontSize: '0.9em', color: '#666' }}>
-                                  {item.extras.map((extra, extraIdx) => (
-                                    <li key={extraIdx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <span>+ {extra.nombre} x{extra.cantidad}</span>
-                                      <span style={{ marginLeft: '10px' }}>
-                                        {formatCurrency(extra.cantidad * extra.precioUnitario * item.cantidad)}
-                                      </span>
+                                        return (
+                                          <li key={idx} style={{ marginBottom: '10px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                              <div>
+                                                <strong>{item.cantidad}x</strong> {item.productoNombre}
+                                              </div>
+                                              <div style={{ marginLeft: '15px' }}>
+                                                {formatCurrency(itemSubtotal)}
+                                              </div>
+                                            </div>
+                                            {item.extras && item.extras.length > 0 && (
+                                              <ul style={{ marginTop: '4px', marginLeft: '20px', listStyleType: 'circle', fontSize: '0.9em', color: '#666' }}>
+                                                {item.extras.map((extra, extraIdx) => (
+                                                  <li key={extraIdx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span>+ {extra.nombre} x{extra.cantidad}</span>
+                                                    <span style={{ marginLeft: '10px' }}>
+                                                      {formatCurrency(extra.cantidad * extra.precioUnitario * item.cantidad)}
+                                                    </span>
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            )}
+                                            {item.extras && item.extras.length > 0 && (
+                                              <div style={{ fontSize: '0.85em', color: '#059669', marginTop: '4px', marginLeft: '20px' }}>
+                                                Subtotal del ítem: {formatCurrency(itemTotal)}
+                                              </div>
+                                            )}
+                                          </li>
+                                        )
+                                      })}
+                                    </ul>
+                                    {pedido.observaciones && (
+                                      <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#fff3cd', borderLeft: '3px solid #ffc107', borderRadius: '4px' }}>
+                                        <strong>Observaciones:</strong> {pedido.observaciones}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <p style={{ marginTop: '10px', color: '#666', fontSize: '0.9em' }}>No hay pedidos en esta cuenta.</p>
+                              )}
+                            </>
+                          ) : (
+                            <div style={{ padding: '10px', textAlign: 'center' }}>
+                              <span className="loading" style={{ display: 'inline-block' }}>Cargando detalles de la cuenta...</span>
+                            </div>
+                          )}
+                        </>
+                      ) : factura.pedidoId ? (
+                        // Factura generada desde pedido individual - mostrar detalle del pedido
+                        <>
+                          {pedido ? (
+                            <>
+                              <strong>Detalle del Pedido:</strong>
+                              <ul style={{ marginTop: '8px', marginLeft: '20px' }}>
+                                {pedido.items.map((item, idx) => {
+                                  const itemSubtotal = item.cantidad * item.precioUnitario
+                                  const extrasSubtotal = item.extras?.reduce((sum, extra) => sum + (extra.cantidad * extra.precioUnitario * item.cantidad), 0) || 0
+                                  const itemTotal = itemSubtotal + extrasSubtotal
+
+                                  return (
+                                    <li key={idx} style={{ marginBottom: '10px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <div>
+                                          <strong>{item.cantidad}x</strong> {item.productoNombre}
+                                        </div>
+                                        <div style={{ marginLeft: '15px' }}>
+                                          {formatCurrency(itemSubtotal)}
+                                        </div>
+                                      </div>
+                                      {item.extras && item.extras.length > 0 && (
+                                        <ul style={{ marginTop: '4px', marginLeft: '20px', listStyleType: 'circle', fontSize: '0.9em', color: '#666' }}>
+                                          {item.extras.map((extra, extraIdx) => (
+                                            <li key={extraIdx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                              <span>+ {extra.nombre} x{extra.cantidad}</span>
+                                              <span style={{ marginLeft: '10px' }}>
+                                                {formatCurrency(extra.cantidad * extra.precioUnitario * item.cantidad)}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                      {item.extras && item.extras.length > 0 && (
+                                        <div style={{ fontSize: '0.85em', color: '#059669', marginTop: '4px', marginLeft: '20px' }}>
+                                          Subtotal del ítem: {formatCurrency(itemTotal)}
+                                        </div>
+                                      )}
                                     </li>
-                                  ))}
-                                </ul>
-                              )}
-                              {item.extras && item.extras.length > 0 && (
-                                <div style={{ fontSize: '0.85em', color: '#059669', marginTop: '4px', marginLeft: '20px' }}>
-                                  Subtotal del ítem: {formatCurrency(itemTotal)}
+                                  )
+                                })}
+                              </ul>
+                              {pedido.observaciones && (
+                                <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#fff3cd', borderLeft: '3px solid #ffc107', borderRadius: '4px' }}>
+                                  <strong>Observaciones:</strong> {pedido.observaciones}
                                 </div>
                               )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                      {pedido.observaciones && (
-                        <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#fff3cd', borderLeft: '3px solid #ffc107', borderRadius: '4px' }}>
-                          <strong>Observaciones:</strong> {pedido.observaciones}
+                            </>
+                          ) : (
+                            <div style={{ padding: '10px', textAlign: 'center' }}>
+                              <span className="loading" style={{ display: 'inline-block' }}>Cargando detalles del pedido...</span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        // Factura sin pedido ni cuenta (caso edge - no debería ocurrir)
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#666' }}>
+                          <p>No hay detalles de pedidos disponibles para esta factura.</p>
                         </div>
                       )}
                     </div>

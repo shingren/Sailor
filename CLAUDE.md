@@ -4,16 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sailor is a restaurant management system built with a Spring Boot backend and React frontend, running on Docker with Nginx reverse proxy. The application manages tables (mesas), products (productos), orders (pedidos), invoices (facturas), payments (pagos), inventory (insumos), recipes (recetas), reservations (reservas), and cash register closures (cierre de caja) with JWT authentication and role-based access control (RBAC).
+Sailor is a restaurant management system built with a Spring Boot backend and React frontend, running on Docker with Nginx reverse proxy. The application manages tables (mesas), products (productos), accounts/tabs (cuentas), orders (pedidos), customers (clientes), invoices (facturas), payments (pagos), inventory (insumos), recipes (recetas), reservations (reservas), and cash register closures (cierre de caja) with JWT authentication and role-based access control (RBAC).
+
+**Key architectural feature**: The system supports both legacy per-order (pedido) invoicing and modern account-based (cuenta) invoicing, allowing multiple orders to be grouped under a single account/tab before generating an invoice.
 
 ## Architecture
 
 ### Backend (Spring Boot 3.3.0 + Java 21)
 - **Package structure**: `com.sailor.*`
-  - `entity`: JPA entities (Mesa, Producto, Pedido, PedidoItem, PedidoItemExtra, PedidoEstado, Usuario, Factura, Pago, Insumo, Receta, RecetaItem, RecetaExtra, MovimientoInsumo, Reserva, CierreCaja, Location)
+  - `entity`: JPA entities (Mesa, Producto, Pedido, PedidoItem, PedidoItemExtra, PedidoEstado, Usuario, Cuenta, CuentaEstado, Cliente, Factura, Pago, Insumo, Receta, RecetaItem, RecetaExtra, MovimientoInsumo, Reserva, CierreCaja, Location)
   - `repository`: Spring Data JPA repositories
-  - `service`: Business logic (PedidoService, FacturaService, InsumoService, RecetaService, ReservaService, CierreCajaService, UsuarioService, DashboardService, JwtUtil, CustomUserDetailsService)
-  - `controller`: REST controllers (MesaController, ProductoController, PedidoController, FacturaController, PagoController, InsumoController, RecetaController, ReservaController, ReporteController, DashboardController, CierreCajaController, UsuarioController, LocationController, AuthController, HealthController)
+  - `service`: Business logic (PedidoService, CuentaService, FacturaService, ClienteService, InsumoService, RecetaService, ReservaService, CierreCajaService, UsuarioService, DashboardService, JwtUtil, CustomUserDetailsService)
+  - `controller`: REST controllers (MesaController, ProductoController, PedidoController, CuentaController, ClienteController, FacturaController, PagoController, InsumoController, RecetaController, ReservaController, ReporteController, DashboardController, CierreCajaController, UsuarioController, LocationController, AuthController, HealthController)
   - `dto`: Data transfer objects for request/response mapping
   - `config`: Security, CORS, JWT filter, data initialization, exception handling
 - **Database**: MySQL 8 with Hibernate (ddl-auto: update)
@@ -36,10 +38,14 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
   - AuthContext provides: `email`, `rol`, `isAuthenticated`, `login()`, `logout()`, `getAuthHeader()`, `hasRole()`
   - Access and refresh tokens persisted in localStorage
   - Token refresh is automatic when access token expires
-- **Components**: TopBar (navigation header), Sidebar (collapsible menu), NotAuthorized (403 page)
+- **Components**: TopBar (navigation header), Sidebar (collapsible menu), NotAuthorized (403 page), MenuGridView (product selection grid)
 - **Pages**: HomePage, LoginPage, MesasPage, FloorplanPage, ProductosPage, PedidosPage, FacturasPage, InventarioPage, ReservasPage, CocinaPage, ReportesPage, StaffPage, CierreCajaPage
   - All pages follow consistent patterns: loading states, error handling, and authentication checks
   - Spanish language UI throughout the application
+- **MenuGridView**: Grid-based product selection component for point-of-sale (POS) functionality
+  - Visual product catalog with categories
+  - Supports adding products to orders with quantities and extras
+  - Integrates with order management workflow
 - **FloorplanPage**: Interactive canvas-based floor plan for visual table management
   - Drag-and-drop table positioning with location filtering
   - Pan and zoom controls for large floor plans
@@ -61,24 +67,40 @@ Sailor is a restaurant management system built with a Spring Boot backend and Re
 - **Location**: Standalone entity for organizing tables into areas/zones (e.g., "Patio", "Interior", "Bar")
 - **Usuario**: User entity with `rol` field (ADMIN, MESERO, COCINA, CAJA, INVENTARIO, GERENCIA)
 - **Producto**: Standalone product catalog
-- **Pedido**: One-to-Many with PedidoItem, Many-to-One with Mesa
-  - Has `estado` field (enum: PENDIENTE → PREPARACION → LISTO → ENTREGADO → PAGADO)
+- **Cuenta** (Account/Tab): Represents a table's account for grouping multiple orders
+  - Has `estado` field (enum: ABIERTA → CON_FACTURA → CERRADA)
+  - Many-to-One with Mesa (belongs to a table)
+  - One-to-Many with Pedido (can contain multiple orders)
+  - One-to-One with Factura (generates one invoice for all orders in the account)
+  - Tracks `creadaPorUsuario` (who opened the account)
+  - State transitions: ABIERTA (accepting orders) → CON_FACTURA (invoice generated) → CERRADA (paid and closed)
+- **Cliente** (Customer): Customer information for fiscal/invoicing purposes
+  - Fields: nombre, identificacionFiscal (unique), direccion, email, telefono, activo
+  - Used to associate customer data with facturas
+  - `identificacionFiscal` is required and unique (tax ID / fiscal identification)
+- **Pedido**: One-to-Many with PedidoItem, Many-to-One with Mesa, optional Many-to-One with Cuenta
+  - Has `estado` field (string: PENDIENTE → PREPARACION → LISTO)
   - State transitions are validated (see PedidoEstado enum)
-  - PAGADO orders do not appear in "Pedidos Activos"
-  - **Facturación**: ONLY pedidos with estado ENTREGADO can generate facturas (strictly enforced)
-    - Attempts to facturar pedidos in other states return HTTP 400 Bad Request with clear error message
-    - GET /pedidos/listos-facturar returns ENTREGADO pedidos WITHOUT existing factura
-  - When factura is fully paid, pedido estado automatically changes to PAGADO
+  - **Note**: ENTREGADO state has been removed from the workflow
+  - Can belong to a Cuenta (for grouped invoicing) or be standalone (legacy per-pedido invoicing)
+  - **Facturación**: Orders can generate facturas either individually (legacy) or as part of a Cuenta (new model)
 - **PedidoItem**: Many-to-One with both Pedido and Producto, One-to-Many with PedidoItemExtra
   - Order creation is transactional and automatically sets `precioUnitario` from current product price
 - **PedidoItemExtra**: Many-to-One with both PedidoItem and RecetaExtra
   - Tracks extras/add-ons selected for a specific order item
   - Stores quantity and price at time of order
-- **Factura** (Invoice): **One-to-One with Pedido** (unique constraint on pedido_id), One-to-Many with Pago
+- **Factura** (Invoice): One-to-Many with Pago, optional One-to-One with Pedido (legacy), optional One-to-One with Cuenta (new model), optional Many-to-One with Cliente
   - Has `estado` field (enum FacturaEstado: PENDIENTE, PAGADA)
-  - A pedido can have only ONE factura (enforced at database and application level)
-  - Attempting to create a second factura for the same pedido returns HTTP 409 Conflict
-  - When totalPagado >= total, estado changes to PAGADA and pedido estado changes to PAGADO
+  - **Dual invoicing model**: Supports both legacy (one factura per pedido) and new (one factura per cuenta)
+    - Legacy: One-to-One with Pedido (unique constraint on pedido_id)
+    - New: One-to-One with Cuenta (unique constraint on cuenta_id)
+  - **Cliente relationship**: Optional Many-to-One with Cliente for fiscal purposes
+    - Factura freezes cliente data at time of invoice creation (snapshot fields: clienteIdentificacionFiscal, clienteNombre, clienteDireccion, clienteEmail, clienteTelefono)
+    - Snapshot ensures historical accuracy even if cliente data is modified later
+  - Tracks `creadaPorUsuario` (who created the invoice) and `fechaHoraPago` (when payment was completed)
+  - When totalPagado >= total, estado changes to PAGADA
+  - For legacy model: When factura is paid, pedido estado may change to PAGADO
+  - For cuenta model: When factura is paid, cuenta estado changes to CERRADA
 - **Pago** (Payment): Many-to-One with Factura, has `metodoPago` field (EFECTIVO, TARJETA)
 - **Insumo** (Ingredient): Standalone ingredient/supply entity with stock tracking
   - Fields: nombre, unidad, stockActual, stockMinimo
@@ -146,6 +168,39 @@ npm run dev
 # Build for production
 npm run build
 ```
+
+### Testing
+
+**Note**: This project currently uses integration testing via shell scripts rather than unit tests.
+
+#### Integration Test Scripts
+Located in the root directory as `test_*.sh` files. These scripts test end-to-end workflows by making HTTP requests to the API.
+
+**Common test scripts:**
+```bash
+# Test cuenta-based invoicing workflow
+./test_ordenes_por_cuenta.sh
+
+# Test invoice estado management
+./test_estados_factura.sh
+
+# Test client fiscal data snapshot
+./test_cliente_identificacion_snapshot.sh
+
+# Test role-based access control
+./test_flujo_sin_entregado_roles.sh
+
+# Test price update (admin-only)
+./test_precio_admin_only.sh
+```
+
+**Requirements for running test scripts:**
+- Backend must be running (via `docker compose up` or `mvn spring-boot:run`)
+- Scripts use `curl` to make API calls
+- Test scripts automatically log in and use JWT tokens for authenticated requests
+- Each script tests a specific feature or workflow and outputs results
+
+**Note**: When adding new features, consider adding corresponding integration test scripts following the existing patterns.
 
 ## Database Configuration
 
@@ -217,13 +272,30 @@ All endpoints require JWT Bearer token authentication except `/auth/**` and `/he
 - `GET /pedidos` - List all orders (ADMIN, MESERO)
 - `GET /pedidos/activos` - List active orders (ADMIN, MESERO, COCINA)
 - `GET /pedidos/{id}` - Get order by ID (ADMIN, MESERO)
-- `POST /pedidos` - Create order (ADMIN, MESERO) - requires `mesaId`, `items[]` (with optional `extras[]`), optional `observaciones`
+- `POST /pedidos` - Create order (ADMIN, MESERO) - requires `mesaId`, `items[]` (with optional `extras[]`), optional `cuentaId`, optional `observaciones`
 - `PATCH /pedidos/{id}/estado` - Update order status (ADMIN, MESERO, COCINA)
-- `GET /pedidos/listos-facturar` - Get orders ready for invoicing (estado: ENTREGADO)
+- `GET /pedidos/listos-facturar` - Get orders ready for invoicing (legacy endpoint)
+
+#### Cuentas/Accounts (ADMIN, MESERO, CAJA)
+- `GET /cuentas` - List all accounts
+- `GET /cuentas/abiertas` - List open accounts (estado: ABIERTA)
+- `GET /cuentas/{id}` - Get account by ID (includes all pedidos)
+- `POST /cuentas` - Create new account (requires mesaId)
+- `PATCH /cuentas/{id}/estado` - Update account status
+- `GET /cuentas/mesa/{mesaId}` - Get accounts for a specific table
+
+#### Customers (ADMIN, CAJA)
+- `GET /clientes` - List all customers
+- `GET /clientes/{id}` - Get customer by ID
+- `POST /clientes` - Create customer (requires nombre, identificacionFiscal)
+- `PUT /clientes/{id}` - Update customer information
+- `DELETE /clientes/{id}` - Deactivate customer (soft delete, sets activo=false)
 
 #### Invoices (ADMIN, CAJA)
 - `GET /facturas` - List all invoices
-- `POST /facturas` - Create invoice from order
+- `POST /facturas` - Create invoice from pedido (legacy) or cuenta (new model)
+  - For cuenta-based: requires `cuentaId`, optional `clienteId`, `descuento`
+  - For pedido-based: requires `pedidoId` (legacy support)
 
 #### Payments (ADMIN, CAJA)
 - `GET /pagos` - List all payments
@@ -283,11 +355,24 @@ Edit [backend/src/main/java/com/sailor/config/SecurityConfig.java](backend/src/m
 - Use `.requestMatchers("/path/**").hasAnyRole("ROLE1", "ROLE2")` for multiple roles
 - **Important**: Spring Security expects roles WITHOUT the "ROLE_" prefix in `.hasRole()` (e.g., use `"ADMIN"` not `"ROLE_ADMIN"`)
 
-### Order State Workflow
+### Order and Account State Workflows
+
+#### Order (Pedido) State Workflow
 When working with orders, respect the state machine defined in [PedidoEstado.java](backend/src/main/java/com/sailor/entity/PedidoEstado.java):
-- Valid states: `PENDIENTE` → `PREPARACION` → `LISTO` → `ENTREGADO`
+- Valid states: `PENDIENTE` → `PREPARACION` → `LISTO`
+- **Note**: The `ENTREGADO` and `PAGADO` states have been removed from the workflow
 - Invalid transitions are rejected by `PedidoEstado.isValidTransition()`
 - Use `PATCH /pedidos/{id}/estado` to transition between states
+
+#### Account (Cuenta) State Workflow
+When working with accounts, respect the state machine defined in [CuentaEstado.java](backend/src/main/java/com/sailor/entity/CuentaEstado.java):
+- Valid states: `ABIERTA` → `CON_FACTURA` → `CERRADA`
+- State transitions:
+  - `ABIERTA`: Account is open, accepting new pedidos
+  - `CON_FACTURA`: Invoice has been generated for the account (cannot add more pedidos)
+  - `CERRADA`: Invoice has been paid and account is closed
+- Invalid transitions are rejected by `CuentaEstado.isValidTransition()`
+- Use `PATCH /cuentas/{id}/estado` to transition between states (typically automated by the system)
 
 ### Inventory Management Patterns
 When working with inventory:
@@ -310,6 +395,29 @@ The system supports optional extras (add-ons) for products:
 - **Creating orders with extras**: Include `extras` array in each item when POSTing to `/pedidos`
   - Each extra should specify `recetaExtraId` and `cantidad`
 - **Inventory impact**: When creating orders, extras consume inventory through their associated insumos
+
+### Account (Cuenta) Management Pattern
+The system supports grouped invoicing via the Cuenta (Account/Tab) entity:
+- **Workflow**:
+  1. Open a new Cuenta for a Mesa: `POST /cuentas` with `mesaId`
+  2. Create Pedidos associated with the Cuenta: `POST /pedidos` with `cuentaId`
+  3. When ready to pay, generate a Factura for the entire Cuenta: `POST /facturas` with `cuentaId`
+  4. Process payment(s): `POST /pagos` with `facturaId`
+  5. When fully paid, the Cuenta automatically transitions to CERRADA
+- **Benefits**: Allows multiple orders to be grouped under one account before invoicing (e.g., customers ordering multiple rounds)
+- **Legacy support**: The system still supports the old per-pedido invoicing model for backward compatibility
+- **Estado management**: Cuenta estado is typically managed automatically by the system when facturas are created/paid
+
+### Cliente Data Snapshot Pattern
+The Factura entity implements a snapshot pattern for cliente (customer) fiscal data:
+- **Purpose**: Preserve customer information as it existed at the time of invoicing for legal/audit compliance
+- **Implementation**:
+  - Factura has a Many-to-One relationship with Cliente (optional)
+  - Factura also has snapshot fields: `clienteIdentificacionFiscal`, `clienteNombre`, `clienteDireccion`, `clienteEmail`, `clienteTelefono`
+  - When creating a factura with a cliente, copy cliente data into these snapshot fields
+  - Snapshot data remains unchanged even if the Cliente entity is later modified
+- **Benefits**: Historical accuracy for fiscal records, audit trails, and legal compliance
+- **Creating facturas with cliente**: Include `clienteId` when POSTing to `/facturas`, and the system will automatically snapshot the data
 
 ### Floorplan and Location Management
 The FloorplanPage provides a visual, interactive floor plan for managing tables:

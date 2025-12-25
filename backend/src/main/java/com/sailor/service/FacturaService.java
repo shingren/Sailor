@@ -443,9 +443,11 @@ public class FacturaService {
         // Handle both pedido-based (legacy) and cuenta-based (new) facturas
         if (factura.getPedido() != null) {
             dto.setPedidoId(factura.getPedido().getId());
+            dto.setCuentaId(null);
         } else if (factura.getCuenta() != null) {
-            // For cuenta-based facturas, pedidoId is null
+            // For cuenta-based facturas, pedidoId is null but cuentaId is set
             dto.setPedidoId(null);
+            dto.setCuentaId(factura.getCuenta().getId());
         }
 
         dto.setFechaHora(factura.getFechaHora());
