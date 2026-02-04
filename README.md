@@ -1,4 +1,4 @@
-# Sailor – Sistema de Gestión para Restaurantes y Bares
+# Sailor – Restaurant and Bar Management System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://adoptium.net/)
@@ -6,45 +6,45 @@
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
-Sistema integral de gestión diseñado específicamente para restaurantes, bares y establecimientos gastronómicos. Sailor proporciona control completo sobre operaciones diarias incluyendo punto de venta (POS), gestión de mesas, cocina, inventario, facturación, cierre de caja, reservas y reportes analíticos.
+Comprehensive management system designed specifically for restaurants, bars, and food service establishments. Sailor provides complete control over daily operations including point of sale (POS), table management, kitchen operations, inventory, invoicing, cash register closure, reservations, and analytical reports.
 
-## Características Principales
+## Key Features
 
-- **Gestión de Mesas (Floor Plan)**: Visualización y administración de mesas con estados en tiempo real (disponible, ocupada, reservada)
-- **Punto de Venta (POS)**: Sistema completo de pedidos con catálogo de productos, cantidades y observaciones
-- **Cocina**: Vista especializada para el personal de cocina con estados de pedidos (Pendiente, Preparación, Listo, Entregado)
-- **Inventario**: Control de insumos con stock actual, stock mínimo, movimientos (COMPRA, AJUSTE, CONSUMO) y recetas de productos
-- **Facturación**: Generación de facturas a partir de pedidos con soporte para pagos múltiples (Efectivo, Tarjeta)
-- **Cierre de Caja**: Resumen diario de ventas, comparación entre saldo esperado y real, historial de cierres
-- **Reservas**: Gestión de reservas de mesas por horario con validación de disponibilidad
-- **Reportes**: Análisis de ventas del día, ventas por producto, pedidos por estado, consumo de insumos y reservas
-- **Gestión de Personal (RBAC)**: Control de acceso basado en roles (ADMIN, MESERO, COCINA, CAJA, INVENTARIO, GERENCIA)
-- **Autenticación Segura**: Sistema JWT con tokens de acceso (15 min) y refresh tokens (7 días)
+- **Table Management (Floor Plan)**: Visual table administration with real-time status (available, occupied, reserved)
+- **Point of Sale (POS)**: Complete order system with product catalog, quantities, and notes
+- **Kitchen Operations**: Specialized view for kitchen staff with order status tracking (Pending, Preparation, Ready, Delivered)
+- **Inventory Management**: Ingredient control with current stock, minimum levels, movements (PURCHASE, ADJUSTMENT, CONSUMPTION), and product recipes
+- **Invoicing**: Invoice generation from orders with multiple payment support (Cash, Card)
+- **Cash Register Closure**: Daily sales summary, comparison between expected and actual balance, closure history
+- **Reservations**: Table reservation management by time slot with availability validation
+- **Reports**: Daily sales analysis, sales by product, orders by status, ingredient consumption, and reservations
+- **Staff Management (RBAC)**: Role-based access control (ADMIN, MESERO, COCINA, CAJA, INVENTARIO, GERENCIA)
+- **Secure Authentication**: JWT system with access tokens (15 min) and refresh tokens (7 days)
 
-## Arquitectura General
+## Architecture Overview
 
 ### Backend
-- **Lenguaje**: Java 21
+- **Language**: Java 21
 - **Framework**: Spring Boot 3.3.0
-- **Base de Datos**: MySQL 8
+- **Database**: MySQL 8
 - **ORM**: Hibernate JPA
-- **Seguridad**: Spring Security + JWT (JJWT 0.12.3)
-- **Construcción**: Maven
+- **Security**: Spring Security + JWT (JJWT 0.12.3)
+- **Build Tool**: Maven
 
 ### Frontend
 - **Framework**: React 18
 - **Bundler**: Vite
 - **Routing**: React Router DOM
 - **State Management**: Context API (AuthContext)
-- **Estilos**: CSS personalizado
+- **Styling**: Custom CSS
 
-### Infraestructura
-- **Orquestación**: Docker + Docker Compose
-- **Reverse Proxy**: Nginx con soporte HTTPS
-- **Certificados**: SSL/TLS autofirmados (desarrollo)
-- **Hot Reload**: Vite HMR con WebSocket habilitado
+### Infrastructure
+- **Orchestration**: Docker + Docker Compose
+- **Reverse Proxy**: Nginx with HTTPS support
+- **Certificates**: Self-signed SSL/TLS (development)
+- **Hot Reload**: Vite HMR with WebSocket enabled
 
-### Arquitectura de Contenedores
+### Container Architecture
 ```
 ┌─────────────────────────────────────────┐
 │         Nginx (Reverse Proxy)           │
@@ -66,105 +66,105 @@ Sistema integral de gestión diseñado específicamente para restaurantes, bares
 └──────────────────┘
 ```
 
-## Requisitos Previos
+## Prerequisites
 
-### Para ejecución con Docker (Recomendado)
+### For Docker Execution (Recommended)
 - [Docker](https://www.docker.com/get-started) 20.10+
 - [Docker Compose](https://docs.docker.com/compose/install/) 2.0+
 
-### Para ejecución sin Docker
+### For Execution Without Docker
 - [Java JDK 21](https://adoptium.net/)
 - [Maven 3.8+](https://maven.apache.org/download.cgi)
-- [Node.js 18+](https://nodejs.org/) (con npm)
+- [Node.js 18+](https://nodejs.org/) (with npm)
 - [MySQL 8.0+](https://dev.mysql.com/downloads/mysql/)
 
-## Instalación y Ejecución
+## Installation and Execution
 
-### Opción 1: Docker Compose (Recomendada)
+### Option 1: Docker Compose (Recommended)
 
-Esta es la forma más rápida y sencilla de ejecutar todo el stack completo.
+This is the fastest and easiest way to run the complete stack.
 
-1. **Clonar el repositorio**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/AArCh95/Sailor.git
    cd Sailor
    ```
 
-2. **Levantar todos los servicios**
+2. **Start all services**
    ```bash
    docker compose up -d --build
    ```
 
-3. **Acceder a la aplicación**
-   - HTTPS (producción): https://localhost
-   - HTTP: http://localhost (redirige automáticamente a HTTPS)
-   - API directa: http://localhost:8080
-   - Frontend directo: http://localhost:5173
+3. **Access the application**
+   - HTTPS (production): https://localhost
+   - HTTP: http://localhost (automatically redirects to HTTPS)
+   - Direct API: http://localhost:8080
+   - Direct frontend: http://localhost:5173
 
-4. **Puertos utilizados**
-   - `80`: HTTP (redirige a HTTPS)
+4. **Ports used**
+   - `80`: HTTP (redirects to HTTPS)
    - `443`: HTTPS (Nginx)
    - `8080`: Backend API (Spring Boot)
    - `5173`: Frontend Dev Server (Vite)
-   - `3307`: MySQL (puerto expuesto en host)
+   - `3307`: MySQL (port exposed on host)
 
-5. **Usuarios por defecto**
+5. **Default users**
    - Admin: `admin@sailor.com` / `admin123`
-   - Usuario: `user@sailor.com` / `user123`
+   - User: `user@sailor.com` / `user123`
 
-6. **Detener los servicios**
+6. **Stop services**
    ```bash
    docker compose down
    ```
 
-7. **Eliminar volúmenes (resetear base de datos)**
+7. **Remove volumes (reset database)**
    ```bash
    docker compose down -v
    ```
 
-### Opción 2: Backend sin Docker
+### Option 2: Backend Without Docker
 
-1. **Configurar MySQL local**
-   - Crear base de datos: `sailor`
-   - Usuario: `sailor` / Contraseña: `sailor123`
-   - Puerto: `3307` (o `3306` según tu instalación)
+1. **Configure local MySQL**
+   - Create database: `sailor`
+   - User: `sailor` / Password: `sailor123`
+   - Port: `3307` (or `3306` depending on your installation)
 
-2. **Actualizar configuración** (si es necesario)
+2. **Update configuration** (if needed)
 
-   Editar `backend/src/main/resources/application.yml`:
+   Edit `backend/src/main/resources/application.yml`:
    ```yaml
    spring:
      datasource:
        url: jdbc:mysql://localhost:3307/sailor
    ```
 
-3. **Compilar y ejecutar**
+3. **Build and run**
    ```bash
    cd backend
    mvn clean package
    mvn spring-boot:run
    ```
 
-   O ejecutar directamente:
+   Or run directly:
    ```bash
    mvn clean package
    java -jar target/sailor-0.0.1-SNAPSHOT.jar
    ```
 
-4. **Acceder a la API**
+4. **Access the API**
    - http://localhost:8080
 
-### Opción 3: Frontend sin Docker
+### Option 3: Frontend Without Docker
 
-1. **Instalar dependencias**
+1. **Install dependencies**
    ```bash
    cd frontend
    npm install
    ```
 
-2. **Configurar proxy (si es necesario)**
+2. **Configure proxy (if needed)**
 
-   Verificar `frontend/vite.config.js`:
+   Verify `frontend/vite.config.js`:
    ```javascript
    server: {
      proxy: {
@@ -176,33 +176,33 @@ Esta es la forma más rápida y sencilla de ejecutar todo el stack completo.
    }
    ```
 
-3. **Ejecutar servidor de desarrollo**
+3. **Run development server**
    ```bash
    npm run dev
    ```
 
-4. **Acceder a la aplicación**
+4. **Access the application**
    - http://localhost:5173
 
-5. **Compilar para producción**
+5. **Build for production**
    ```bash
    npm run build
    ```
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 Sailor/
-├── backend/                    # Backend Spring Boot
+├── backend/                    # Spring Boot Backend
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/sailor/
-│   │   │   │   ├── config/        # Configuración (Security, CORS, DataInitializer)
+│   │   │   │   ├── config/        # Configuration (Security, CORS, DataInitializer)
 │   │   │   │   ├── controller/    # REST Controllers
 │   │   │   │   ├── dto/           # Data Transfer Objects
-│   │   │   │   ├── entity/        # Entidades JPA
-│   │   │   │   ├── repository/    # Repositorios Spring Data
-│   │   │   │   ├── service/       # Lógica de negocio
+│   │   │   │   ├── entity/        # JPA Entities
+│   │   │   │   ├── repository/    # Spring Data Repositories
+│   │   │   │   ├── service/       # Business Logic
 │   │   │   │   └── SailorApplication.java
 │   │   │   └── resources/
 │   │   │       └── application.yml
@@ -210,10 +210,10 @@ Sailor/
 │   ├── Dockerfile
 │   └── pom.xml
 │
-├── frontend/                   # Frontend React + Vite
+├── frontend/                   # React + Vite Frontend
 │   ├── src/
-│   │   ├── App.jsx            # Componente principal y router
-│   │   ├── AuthContext.jsx   # Context de autenticación
+│   │   ├── App.jsx            # Main component and router
+│   │   ├── AuthContext.jsx   # Authentication context
 │   │   ├── HomePage.jsx
 │   │   ├── LoginPage.jsx
 │   │   ├── MesasPage.jsx
@@ -231,95 +231,95 @@ Sailor/
 │   ├── vite.config.js
 │   └── package.json
 │
-├── nginx/                      # Configuración Nginx
+├── nginx/                      # Nginx Configuration
 │   ├── nginx.conf
-│   └── certs/                 # Certificados SSL autofirmados
+│   └── certs/                 # Self-signed SSL certificates
 │
-├── docker-compose.yml         # Orquestación de contenedores
+├── docker-compose.yml         # Container orchestration
 ├── .gitignore
 ├── README.md
-├── CLAUDE.md                  # Instrucciones para Claude Code
-├── CONTRIBUTING.md            # Guía para colaboradores
-└── SETUP.md                   # Guía de configuración detallada
+├── CLAUDE.md                  # Claude Code instructions
+├── CONTRIBUTING.md            # Contributor guide
+└── SETUP.md                   # Detailed setup guide
 ```
 
 ## API Endpoints
 
-### Públicos (sin autenticación)
+### Public (no authentication required)
 - `GET /health` - Health check
-- `POST /auth/login` - Iniciar sesión
-- `POST /auth/refresh` - Refrescar access token
+- `POST /auth/login` - Login
+- `POST /auth/refresh` - Refresh access token
 
-### Protegidos (requieren Bearer token)
-- **Mesas**: `GET /mesas`, `POST /mesas`
-- **Productos**: `GET /productos`, `POST /productos`
-- **Pedidos**: `GET /pedidos`, `POST /pedidos`, `GET /pedidos/{id}`
-- **Facturas**: `GET /facturas`, `POST /facturas`
-- **Pagos**: `POST /pagos`
-- **Insumos**: `GET /insumos`, `POST /insumos`, `PUT /insumos/{id}`
-- **Movimientos**: `GET /insumos/movimientos`, `POST /insumos/movimientos`
-- **Recetas**: `GET /recetas`, `POST /recetas`
-- **Reservas**: `GET /reservas`, `POST /reservas`, `POST /reservas/{id}/cancelar`
-- **Reportes**: `GET /reportes/*`
-- **Usuarios** (solo ADMIN): `GET /usuarios`, `POST /usuarios`, `PUT /usuarios/{id}/rol`, `DELETE /usuarios/{id}`
-- **Cierre de Caja**: `GET /cierre-caja`, `POST /cierre-caja`, `GET /cierre-caja/resumen-dia`
+### Protected (require Bearer token)
+- **Tables**: `GET /mesas`, `POST /mesas`
+- **Products**: `GET /productos`, `POST /productos`
+- **Orders**: `GET /pedidos`, `POST /pedidos`, `GET /pedidos/{id}`
+- **Invoices**: `GET /facturas`, `POST /facturas`
+- **Payments**: `POST /pagos`
+- **Ingredients**: `GET /insumos`, `POST /insumos`, `PUT /insumos/{id}`
+- **Movements**: `GET /insumos/movimientos`, `POST /insumos/movimientos`
+- **Recipes**: `GET /recetas`, `POST /recetas`
+- **Reservations**: `GET /reservas`, `POST /reservas`, `POST /reservas/{id}/cancelar`
+- **Reports**: `GET /reportes/*`
+- **Users** (ADMIN only): `GET /usuarios`, `POST /usuarios`, `PUT /usuarios/{id}/rol`, `DELETE /usuarios/{id}`
+- **Cash Register**: `GET /cierre-caja`, `POST /cierre-caja`, `GET /cierre-caja/resumen-dia`
 
-## Guía para Colaboradores
+## Contributor Guide
 
-Este proyecto utiliza un flujo de trabajo basado en Git con ramas de características y Pull Requests.
+This project uses a Git-based workflow with feature branches and Pull Requests.
 
-### Flujo de trabajo básico
+### Basic Workflow
 
-1. **Clonar el repositorio** (si aún no lo has hecho)
+1. **Clone the repository** (if you haven't already)
    ```bash
    git clone https://github.com/AArCh95/Sailor.git
    cd Sailor
    ```
 
-2. **Actualizar tu copia local**
+2. **Update your local copy**
    ```bash
    git checkout main
    git pull origin main
    ```
 
-3. **Crear una nueva rama**
+3. **Create a new branch**
    ```bash
-   git checkout -b feature/nombre-de-tu-feature
+   git checkout -b feature/your-feature-name
    ```
 
-   Convenciones de nombres de ramas:
-   - `feature/` - Nueva funcionalidad
-   - `fix/` - Corrección de bugs
-   - `ui/` - Mejoras de interfaz
-   - `refactor/` - Refactorización de código
-   - `docs/` - Documentación
+   Branch naming conventions:
+   - `feature/` - New functionality
+   - `fix/` - Bug fixes
+   - `ui/` - Interface improvements
+   - `refactor/` - Code refactoring
+   - `docs/` - Documentation
 
-4. **Hacer tus cambios y commits**
+4. **Make your changes and commit**
    ```bash
    git add .
-   git commit -m "Descripción clara de los cambios"
+   git commit -m "Clear description of changes"
    ```
 
-5. **Pushear tu rama**
+5. **Push your branch**
    ```bash
-   git push origin feature/nombre-de-tu-feature
+   git push origin feature/your-feature-name
    ```
 
-6. **Abrir un Pull Request** en GitHub hacia la rama `main`
+6. **Open a Pull Request** on GitHub targeting the `main` branch
 
-### Estándares de commits
+### Commit Standards
 
-- Usa mensajes descriptivos en español
-- Sé específico sobre qué cambió y por qué
-- Ejemplos:
-  - ✅ "Agregar validación de stock en creación de pedidos"
-  - ✅ "Corregir cálculo de diferencia en cierre de caja"
+- Use descriptive commit messages in English
+- Be specific about what changed and why
+- Examples:
+  - ✅ "Add stock validation to order creation"
+  - ✅ "Fix cash register closure difference calculation"
   - ❌ "Fix bug"
   - ❌ "Update"
 
-### Antes de hacer un Pull Request
+### Before Making a Pull Request
 
-1. Asegúrate de que el código compile sin errores
+1. Ensure the code compiles without errors
    ```bash
    # Backend
    cd backend && mvn clean package
@@ -328,56 +328,56 @@ Este proyecto utiliza un flujo de trabajo basado en Git con ramas de caracterís
    cd frontend && npm run build
    ```
 
-2. Prueba tus cambios con Docker Compose
+2. Test your changes with Docker Compose
    ```bash
    docker compose up --build
    ```
 
-3. Verifica que no hayas incluido archivos sensibles (`.env`, credenciales, etc.)
+3. Verify you haven't included sensitive files (`.env`, credentials, etc.)
 
-Para más detalles, consulta [CONTRIBUTING.md](./CONTRIBUTING.md).
+For more details, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-## Notas de Seguridad
+## Security Notes
 
-### Variables de Entorno
-- **NUNCA** subas archivos `.env` al repositorio
-- **NUNCA** incluyas credenciales, API keys o secretos en el código
-- Usa variables de entorno para configuración sensible
+### Environment Variables
+- **NEVER** commit `.env` files to the repository
+- **NEVER** include credentials, API keys, or secrets in code
+- Use environment variables for sensitive configuration
 
-### Certificados SSL
-- Los certificados en `nginx/certs/` son **autofirmados** y solo para desarrollo
-- En producción, usa certificados válidos (Let's Encrypt, etc.)
+### SSL Certificates
+- Certificates in `nginx/certs/` are **self-signed** and for development only
+- In production, use valid certificates (Let's Encrypt, etc.)
 
-### Secrets JWT
-- La clave secreta JWT está en `application.yml` para desarrollo
-- En producción, usa variables de entorno o servicios de secretos
+### JWT Secrets
+- JWT secret key is in `application.yml` for development
+- In production, use environment variables or secret management services
 
-### Base de Datos
-- Las credenciales por defecto son solo para desarrollo local
-- En producción, usa contraseñas fuertes y rotar periódicamente
+### Database
+- Default credentials are for local development only
+- In production, use strong passwords and rotate periodically
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la **MIT License** - consulta el archivo [LICENSE](./LICENSE) para más detalles.
+This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
 
-## Seguridad
+## Security
 
-Para reportar vulnerabilidades de seguridad, consulta nuestra [Política de Seguridad](./SECURITY.md).
+To report security vulnerabilities, see our [Security Policy](./SECURITY.md).
 
-**⚠️ Importante para Producción:**
-- Cambia todas las credenciales por defecto (base de datos, usuarios, JWT secret)
-- Usa certificados SSL/TLS válidos (no los autofirmados incluidos)
-- Configura variables de entorno para secretos (ver `.env.example`)
-- Revisa la [Política de Seguridad](./SECURITY.md) para mejores prácticas
+**⚠️ Important for Production:**
+- Change all default credentials (database, users, JWT secret)
+- Use valid SSL/TLS certificates (not the included self-signed ones)
+- Configure environment variables for secrets (see `.env.example`)
+- Review the [Security Policy](./SECURITY.md) for best practices
 
 ## Disclaimer
 
-Este software se proporciona "tal cual", sin garantía de ningún tipo. Consulta la [LICENCIA MIT](./LICENSE) para más información.
+This software is provided "as is", without warranty of any kind. See the [MIT LICENSE](./LICENSE) for more information.
 
-## Contribuciones
+## Contributions
 
-¡Las contribuciones son bienvenidas! Por favor, consulta [CONTRIBUTING.md](./CONTRIBUTING.md) para conocer el proceso.
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for the process.
 
 ---
 
-**Desarrollado con ❤️ para la industria gastronómica**
+**Built with ❤️ for the food service industry**
