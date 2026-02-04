@@ -1,5 +1,11 @@
 # Sailor – Sistema de Gestión para Restaurantes y Bares
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+
 Sistema integral de gestión diseñado específicamente para restaurantes, bares y establecimientos gastronómicos. Sailor proporciona control completo sobre operaciones diarias incluyendo punto de venta (POS), gestión de mesas, cocina, inventario, facturación, cierre de caja, reservas y reportes analíticos.
 
 ## Características Principales
@@ -350,18 +356,27 @@ Para más detalles, consulta [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Las credenciales por defecto son solo para desarrollo local
 - En producción, usa contraseñas fuertes y rotar periódicamente
 
-## Licencia y Propiedad
+## Licencia
 
-**Copyright © 2024. Todos los derechos reservados.**
+Este proyecto está licenciado bajo la **MIT License** - consulta el archivo [LICENSE](./LICENSE) para más detalles.
 
-Este proyecto es **propietario y privado**. El código fuente, la documentación y todos los archivos relacionados son propiedad exclusiva del autor.
+## Seguridad
 
-**No está permitido**:
-- Usar este código para fines comerciales sin autorización
-- Redistribuir o publicar el código en otros repositorios
-- Modificar y distribuir versiones derivadas
+Para reportar vulnerabilidades de seguridad, consulta nuestra [Política de Seguridad](./SECURITY.md).
 
-**Colaboradores**: Solo personas expresamente autorizadas pueden contribuir a este proyecto.
+**⚠️ Importante para Producción:**
+- Cambia todas las credenciales por defecto (base de datos, usuarios, JWT secret)
+- Usa certificados SSL/TLS válidos (no los autofirmados incluidos)
+- Configura variables de entorno para secretos (ver `.env.example`)
+- Revisa la [Política de Seguridad](./SECURITY.md) para mejores prácticas
+
+## Disclaimer
+
+Este software se proporciona "tal cual", sin garantía de ningún tipo. Consulta la [LICENCIA MIT](./LICENSE) para más información.
+
+## Contribuciones
+
+¡Las contribuciones son bienvenidas! Por favor, consulta [CONTRIBUTING.md](./CONTRIBUTING.md) para conocer el proceso.
 
 ---
 
